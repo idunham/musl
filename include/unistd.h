@@ -16,6 +16,12 @@ extern "C" {
 #define SEEK_CUR 1
 #define SEEK_END 2
 
+#if defined(_BSD_SOURCE) && !defined(L_SET)
+#define L_SET	SEEK_SET
+#define L_INCR	SEEK_CUR
+#define L_XTND	SEEK_END
+#endif
+
 #undef NULL
 #ifdef __cplusplus
 #define NULL 0
@@ -144,10 +150,9 @@ void sync(void);
 int getdtablesize(void);
 #endif
 
-#ifdef _GNU_SOURCE
+#if defined(_GNU_SOURCE) || defined(_BSD_SOURCE)
 int brk(void *);
 void *sbrk(intptr_t);
-pid_t forkall(void);
 pid_t vfork(void);
 int vhangup(void);
 int chroot(const char *);
@@ -156,6 +161,10 @@ int sethostname(const char *, size_t);
 int usleep(unsigned);
 unsigned ualarm(unsigned, unsigned);
 int setgroups(size_t, const gid_t []);
+#endif
+
+#ifdef _GNU_SOURCE
+pid_t forkall(void);
 int setresuid(uid_t, uid_t, uid_t);
 int setresgid(gid_t, gid_t, gid_t);
 char *get_current_dir_name(void);
