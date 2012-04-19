@@ -82,6 +82,8 @@ static int do_wordexp(const char *s, wordexp_t *we, int flags)
 		if (we->we_offs > SIZE_MAX/sizeof(void *)/4)
 			return WRDE_NOSPACE;
 		i += we->we_offs;
+	} else {
+		we->we_offs = 0;
 	}
 
 	if (pipe(p) < 0) return WRDE_NOSPACE;
@@ -137,6 +139,10 @@ static int do_wordexp(const char *s, wordexp_t *we, int flags)
 
 	we->we_wordv = wv;
 	we->we_wordc = i;
+
+	for (i=we->we_offs; i; i--)
+		we->we_wordv[i-1] = 0;
+
 	if (flags & WRDE_DOOFFS) we->we_wordc -= we->we_offs;
 	return err;
 }

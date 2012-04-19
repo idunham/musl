@@ -44,7 +44,7 @@ static long long scanexp(FILE *f, int pok)
 	}
 	for (x=0; c-'0'<10U && x<INT_MAX/10; c = shgetc(f))
 		x = 10*x + c-'0';
-	for (y=x; c-'0'<10U && x<LLONG_MAX/100; c = shgetc(f))
+	for (y=x; c-'0'<10U && y<LLONG_MAX/100; c = shgetc(f))
 		y = 10*y + c-'0';
 	for (; c-'0'<10U; c = shgetc(f));
 	shunget(f);
@@ -81,8 +81,8 @@ static long double decfloat(FILE *f, int c, int bits, int emin, int sign, int po
 			if (lrp!=-1) break;
 			lrp = dc;
 		} else if (k < KMAX-2) {
-			if (c!='0') lnz = dc;
 			dc++;
+			if (c!='0') lnz = dc;
 			if (j) x[k] = x[k]*10 + c-'0';
 			else x[k] = c-'0';
 			if (++j==9) {
@@ -394,12 +394,13 @@ static long double hexfloat(FILE *f, int bits, int emin, int sign, int pok)
 	return scalbnl(y, e2);
 }
 
-long double __floatscan(FILE *f, int c, int prec, int pok)
+long double __floatscan(FILE *f, int prec, int pok)
 {
 	int sign = 1;
 	int i;
 	int bits;
 	int emin;
+	int c;
 
 	switch (prec) {
 	case 0:
@@ -418,7 +419,7 @@ long double __floatscan(FILE *f, int c, int prec, int pok)
 		return 0;
 	}
 
-	if (c<0) c = shgetc(f);
+	while (isspace((c=shgetc(f))));
 
 	if (c=='+' || c=='-') {
 		sign -= 2*(c=='-');
@@ -428,9 +429,10 @@ long double __floatscan(FILE *f, int c, int prec, int pok)
 	for (i=0; i<8 && (c|32)=="infinity"[i]; i++)
 		if (i<7) c = shgetc(f);
 	if (i==3 || i==8 || (i>3 && pok)) {
-		if (i==3) shunget(f);
-		if (pok) for (; i>3; i--) shunget(f);
-		else shlim(f, 0);
+		if (i!=8) {
+			shunget(f);
+			if (pok) for (; i>3; i--) shunget(f);
+		}
 		return sign * INFINITY;
 	}
 	if (!i) for (i=0; i<3 && (c|32)=="nan"[i]; i++)

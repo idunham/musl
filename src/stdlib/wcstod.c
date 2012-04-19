@@ -1,6 +1,6 @@
-#include "stdio_impl.h"
-#include "intscan.h"
 #include "shgetc.h"
+#include "floatscan.h"
+#include "stdio_impl.h"
 
 /* This read function heavily cheats. It knows:
  *  (1) len will always be 1
@@ -25,7 +25,7 @@ static size_t do_read(FILE *f, unsigned char *buf, size_t len)
 	return 0;
 }
 
-static unsigned long long wcstox(const wchar_t *s, wchar_t **p, int base, unsigned long long lim)
+static long double wcstox(const wchar_t *s, wchar_t **p, int prec)
 {
 	wchar_t *t = (wchar_t *)s;
 	unsigned char buf[64];
@@ -39,7 +39,7 @@ static unsigned long long wcstox(const wchar_t *s, wchar_t **p, int base, unsign
 	while (iswspace(*t)) t++;
 	f.cookie = (void *)t;
 	shlim(&f, 0);
-	unsigned long long y = __intscan(&f, base, 1, lim);
+	long double y = __floatscan(&f, prec, 1);
 	if (p) {
 		size_t cnt = shcnt(&f);
 		*p = cnt ? t + cnt : (wchar_t *)s;
@@ -47,32 +47,17 @@ static unsigned long long wcstox(const wchar_t *s, wchar_t **p, int base, unsign
 	return y;
 }
 
-unsigned long long wcstoull(const wchar_t *s, wchar_t **p, int base)
+float wcstof(const wchar_t *s, wchar_t **p)
 {
-	return wcstox(s, p, base, ULLONG_MAX);
+	return wcstox(s, p, 0);
 }
 
-long long wcstoll(const wchar_t *s, wchar_t **p, int base)
+double wcstod(const wchar_t *s, wchar_t **p)
 {
-	return wcstox(s, p, base, LLONG_MIN);
+	return wcstox(s, p, 1);
 }
 
-unsigned long wcstoul(const wchar_t *s, wchar_t **p, int base)
+long double wcstold(const wchar_t *s, wchar_t **p)
 {
-	return wcstox(s, p, base, ULONG_MAX);
-}
-
-long wcstol(const wchar_t *s, wchar_t **p, int base)
-{
-	return wcstox(s, p, base, 0UL+LONG_MIN);
-}
-
-intmax_t wcstoimax(const wchar_t *s, wchar_t **p, int base)
-{
-	return wcstoll(s, p, base);
-}
-
-uintmax_t wcstoumax(const wchar_t *s, wchar_t **p, int base)
-{
-	return wcstoull(s, p, base);
+	return wcstox(s, p, 2);
 }

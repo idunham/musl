@@ -73,6 +73,8 @@ static const unsigned char states[]['z'-'A'+1] = {
 	}, { /* 1: l-prefixed */
 		S('d') = LONG, S('i') = LONG,
 		S('o') = ULONG, S('u') = ULONG, S('x') = ULONG, S('X') = ULONG,
+		S('e') = DBL, S('f') = DBL, S('g') = DBL, S('a') = DBL,
+		S('E') = DBL, S('F') = DBL, S('G') = DBL, S('A') = DBL,
 		S('c') = INT, S('s') = PTR, S('n') = PTR,
 		S('l') = LLPRE,
 	}, { /* 2: ll-prefixed */
@@ -650,8 +652,9 @@ int vfprintf(FILE *f, const char *fmt, va_list ap)
 	FLOCK(f);
 	if (!f->buf_size) {
 		saved_buf = f->buf;
-		f->buf = internal_buf;
+		f->wpos = f->wbase = f->buf = internal_buf;
 		f->buf_size = sizeof internal_buf;
+		f->wend = internal_buf + sizeof internal_buf;
 	}
 	ret = printf_core(f, fmt, &ap2, nl_arg, nl_type);
 	if (saved_buf) {
