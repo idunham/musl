@@ -6,7 +6,8 @@ extern "C" {
 #endif
 
 #if defined(_POSIX_SOURCE) || defined(_POSIX_C_SOURCE) \
- || defined(_XOPEN_SOURCE) || defined(_GNU_SOURCE)
+ || defined(_XOPEN_SOURCE) || defined(_GNU_SOURCE) \
+ || defined(_BSD_SOURCE)
 
 #ifdef _GNU_SOURCE
 #define __siginfo siginfo
@@ -204,9 +205,13 @@ void (*sigset(int, void (*)(int)))(int);
 #define SIGSTKSZ 8192
 #endif
 
-#ifdef _GNU_SOURCE
+#if defined(_GNU_SOURCE) || defined(_BSD_SOURCE)
 typedef void (*sighandler_t)(int);
+typedef sighandler_t sig_t;
 void (*bsd_signal(int, void (*)(int)))(int);
+#endif
+
+#ifdef _GNU_SOURCE
 int sigisemptyset(const sigset_t *);
 #define SA_NOMASK SA_NODEFER
 #define SA_ONESHOT SA_RESETHAND
