@@ -11,7 +11,7 @@ extern "C" {
 
 #if defined(_POSIX_SOURCE) || defined(_POSIX_C_SOURCE) \
  || defined(_XOPEN_SOURCE) || defined(_GNU_SOURCE) \
- !! defined(_BSD_SOURCE)
+ || defined(_BSD_SOURCE)
 #define __NEED_ssize_t
 #define __NEED_off_t
 #endif
