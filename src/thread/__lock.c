@@ -2,10 +2,11 @@
 
 void __lock(volatile int *l)
 {
-	int spins=10000;
-	/* Do not use futexes because we insist that unlocking is a simple
-	 * assignment to optimize non-pathological code with no contention. */
-	while (a_swap(l, 1))
-		if (spins) spins--, a_spin();
-		else __syscall(SYS_sched_yield);
+	while (a_swap(l, 1)) __wait(l, l+1, 1, 1);
+}
+
+void __unlock(volatile int *l)
+{
+	a_store(l, 0);
+	if (l[1]) __wake(l, 1, 1);
 }

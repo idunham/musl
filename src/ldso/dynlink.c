@@ -18,6 +18,7 @@
 #include <dlfcn.h>
 
 static int errflag;
+static char errbuf[128];
 
 #ifdef __PIC__
 
@@ -58,9 +59,13 @@ struct dso
 	char buf[];
 };
 
+struct __pthread;
+struct __pthread *__pthread_self_init(void);
+
 static struct dso *head, *tail, *libc;
 static char *env_path, *sys_path, *r_path;
 static int rtld_used;
+static int ssp_used;
 static int runtime;
 static jmp_buf rtld_fail;
 static pthread_rwlock_t lock;
@@ -107,6 +112,7 @@ static void *find_sym(struct dso *dso, const char *s, int need_def)
 	void *def = 0;
 	if (h==0x6b366be && !strcmp(s, "dlopen")) rtld_used = 1;
 	if (h==0x6b3afd && !strcmp(s, "dlsym")) rtld_used = 1;
+	if (h==0x595a4cc && !strcmp(s, "__stack_chk_fail")) ssp_used = 1;
 	for (; dso; dso=dso->next) {
 		Sym *sym;
 		if (!dso->global) continue;
@@ -142,8 +148,11 @@ static void do_relocs(unsigned char *base, size_t *rel, size_t rel_size, size_t 
 			ctx = IS_COPY(type) ? dso->next : dso;
 			sym_val = (size_t)find_sym(ctx, name, IS_PLT(type));
 			if (!sym_val && sym->st_info>>4 != STB_WEAK) {
+				snprintf(errbuf, sizeof errbuf,
+					"Error relocating %s: %s: symbol not found",
+					dso->name, name);
 				if (runtime) longjmp(rtld_fail, 1);
-				dprintf(2, "%s: symbol not found\n", name);
+				dprintf(2, "%s\n", errbuf);
 				_exit(127);
 			}
 			sym_size = sym->st_size;
@@ -405,9 +414,11 @@ static void load_deps(struct dso *p)
 			if (p->dynv[i] != DT_NEEDED) continue;
 			dep = load_library(p->strings + p->dynv[i+1]);
 			if (!dep) {
-				if (runtime) longjmp(rtld_fail, 1);
-				dprintf(2, "%s: %m (needed by %s)\n",
+				snprintf(errbuf, sizeof errbuf,
+					"Error loading shared library %s: %m (needed by %s)",
 					p->strings + p->dynv[i+1], p->name);
+				if (runtime) longjmp(rtld_fail, 1);
+				dprintf(2, "%s\n", errbuf);
 				_exit(127);
 			}
 			if (runtime) {
@@ -605,6 +616,8 @@ void *__dynlink(int argc, char **argv)
 		reclaim((void *)builtin_dsos, 0, sizeof builtin_dsos);
 	}
 
+	if (ssp_used) __pthread_self_init();
+
 	errno = 0;
 	return (void *)aux[AT_ENTRY];
 }
@@ -634,9 +647,13 @@ void *dlopen(const char *file, int mode)
 		tail = orig_tail;
 		tail->next = 0;
 		p = 0;
+		errflag = 1;
+		goto end;
 	} else p = load_library(file);
 
 	if (!p) {
+		snprintf(errbuf, sizeof errbuf,
+			"Error loading shared library %s: %m", file);
 		errflag = 1;
 		goto end;
 	}
@@ -694,6 +711,7 @@ static void *do_dlsym(struct dso *p, const char *s, void *ra)
 			return p->deps[i]->base + sym->st_value;
 	}
 	errflag = 1;
+	snprintf(errbuf, sizeof errbuf, "Symbol not found: %s", s);
 	return 0;
 }
 
@@ -720,7 +738,7 @@ char *dlerror()
 {
 	if (!errflag) return 0;
 	errflag = 0;
-	return "unknown error";
+	return errbuf;
 }
 
 int dlclose(void *p)

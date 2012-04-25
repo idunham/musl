@@ -147,7 +147,6 @@ void swab(const void *, void *, ssize_t);
 long gethostid(void);
 int nice(int);
 void sync(void);
-int getdtablesize(void);
 #endif
 
 #if defined(_GNU_SOURCE) || defined(_BSD_SOURCE)
@@ -167,9 +166,15 @@ int setgroups(size_t, const gid_t []);
 pid_t forkall(void);
 int setresuid(uid_t, uid_t, uid_t);
 int setresgid(gid_t, gid_t, gid_t);
+int getresuid(uid_t *, uid_t *, uid_t *);
+int getresgid(gid_t *, gid_t *, gid_t *);
 char *get_current_dir_name(void);
 int daemon(int, int);
 int getdomainname(char *, size_t);
+int getdtablesize(void);
+void setusershell(void);
+void endusershell(void);
+char *getusershell(void);
 #endif
 
 #define _XOPEN_VERSION          700

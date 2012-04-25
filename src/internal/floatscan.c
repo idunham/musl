@@ -24,6 +24,8 @@
 
 #define MASK (KMAX-1)
 
+#define CONCAT2(x,y) x ## y
+#define CONCAT(x,y) CONCAT2(x,y)
 
 static long long scanexp(FILE *f, int pok)
 {
@@ -57,12 +59,14 @@ static long double decfloat(FILE *f, int c, int bits, int emin, int sign, int po
 	uint32_t x[KMAX];
 	static const uint32_t th[] = { LD_B1B_MAX };
 	int i, j, k, a, z;
-	long long lrp=-1, dc=0;
+	long long lrp=0, dc=0;
 	long long e10=0;
 	int lnz = 0;
-	int gotdig = 0;
+	int gotdig = 0, gotrad = 0;
 	int rp;
 	int e2;
+	int emax = -emin-bits+3;
+	int denormal = 0;
 	long double y;
 	long double frac=0;
 	long double bias=0;
@@ -74,13 +78,18 @@ static long double decfloat(FILE *f, int c, int bits, int emin, int sign, int po
 
 	/* Don't let leading zeros consume buffer space */
 	for (; c=='0'; c = shgetc(f)) gotdig=1;
+	if (c=='.') {
+		gotrad = 1;
+		for (c = shgetc(f); c=='0'; c = shgetc(f)) gotdig=1, lrp--;
+	}
 
 	x[0] = 0;
 	for (; c-'0'<10U || c=='.'; c = shgetc(f)) {
 		if (c == '.') {
-			if (lrp!=-1) break;
+			if (gotrad) break;
+			gotrad = 1;
 			lrp = dc;
-		} else if (k < KMAX-2) {
+		} else if (k < KMAX-3) {
 			dc++;
 			if (c!='0') lnz = dc;
 			if (j) x[k] = x[k]*10 + c-'0';
@@ -92,10 +101,10 @@ static long double decfloat(FILE *f, int c, int bits, int emin, int sign, int po
 			gotdig=1;
 		} else {
 			dc++;
-			if (c!='0') x[KMAX-3] |= 1;
+			if (c!='0') x[KMAX-4] |= 1;
 		}
 	}
-	if (lrp==-1) lrp=dc;
+	if (!gotrad) lrp=dc;
 
 	if (gotdig && (c|32)=='e') {
 		e10 = scanexp(f, pok);
@@ -134,7 +143,7 @@ static long double decfloat(FILE *f, int c, int bits, int emin, int sign, int po
 	}
 
 	/* Align incomplete final B1B digit */
-	if (k<KMAX && j) {
+	if (j) {
 		for (; j<9; j++) x[k]*=10;
 		k++;
 		j=0;
@@ -245,6 +254,7 @@ static long double decfloat(FILE *f, int c, int bits, int emin, int sign, int po
 	if (bits > LDBL_MANT_DIG+e2-emin) {
 		bits = LDBL_MANT_DIG+e2-emin;
 		if (bits<0) bits=0;
+		denormal = 1;
 	}
 
 	/* Calculate bias term to force rounding, move out lower bits */
@@ -275,11 +285,18 @@ static long double decfloat(FILE *f, int c, int bits, int emin, int sign, int po
 	y += frac;
 	y -= bias;
 
-	y = scalbnl(y, e2);
+	if ((e2+LDBL_MANT_DIG & INT_MAX) > emax-5) {
+		if (fabs(y) >= CONCAT(0x1p, LDBL_MANT_DIG)) {
+			if (denormal && bits==LDBL_MANT_DIG+e2-emin)
+				denormal = 0;
+			y *= 0.5;
+			e2++;
+		}
+		if (e2+LDBL_MANT_DIG>emax || (denormal && frac))
+			errno = ERANGE;
+	}
 
-	if (!y) errno = ERANGE;
-
-	return y;
+	return scalbnl(y, e2);
 }
 
 static long double hexfloat(FILE *f, int bits, int emin, int sign, int pok)
@@ -436,7 +453,7 @@ long double __floatscan(FILE *f, int prec, int pok)
 		return sign * INFINITY;
 	}
 	if (!i) for (i=0; i<3 && (c|32)=="nan"[i]; i++)
-		if (i<3) c = shgetc(f);
+		if (i<2) c = shgetc(f);
 	if (i==3) {
 		return NAN;
 	}
