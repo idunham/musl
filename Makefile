@@ -20,24 +20,31 @@ SRCS = $(sort $(wildcard src/*/*.c))
 OBJS = $(SRCS:.c=.o)
 LOBJS = $(OBJS:.o=.lo)
 GENH = include/bits/alltypes.h
+IMPH = src/internal/stdio_impl.h src/internal/pthread_impl.h src/internal/libc.h
 
-CFLAGS  = -Os -nostdinc -ffreestanding -std=c99 -D_XOPEN_SOURCE=700 -pipe
-LDFLAGS = -nostdlib -shared -fPIC -Wl,-e,_start -Wl,-Bsymbolic-functions
-INC     = -I./src/internal -I./include -I./arch/$(ARCH)
-PIC     = -fPIC -O3
+LDFLAGS = 
+CPPFLAGS =
+CFLAGS = -Os -pipe
+CFLAGS_C99FSE = -std=c99 -ffreestanding -nostdinc 
+
+CFLAGS_ALL = $(CFLAGS_C99FSE)
+CFLAGS_ALL += -D_XOPEN_SOURCE=700 -I./src/internal -I./include -I./arch/$(ARCH)
+CFLAGS_ALL += $(CPPFLAGS) $(CFLAGS)
+CFLAGS_ALL_STATIC = $(CFLAGS_ALL)
+CFLAGS_ALL_SHARED = $(CFLAGS_ALL) -fPIC -DSHARED -O3
+
 AR      = $(CROSS_COMPILE)ar
 RANLIB  = $(CROSS_COMPILE)ranlib
-OBJCOPY = $(CROSS_COMPILE)objcopy
 
 ALL_INCLUDES = $(sort $(wildcard include/*.h include/*/*.h) $(GENH))
 
 EMPTY_LIB_NAMES = m rt pthread crypt util xnet resolv dl
 EMPTY_LIBS = $(EMPTY_LIB_NAMES:%=lib/lib%.a)
-CRT_LIBS = lib/crt1.o lib/crti.o lib/crtn.o
-STATIC_LIBS = lib/libc.a $(EMPTY_LIBS)
+CRT_LIBS = lib/crt1.o lib/Scrt1.o lib/crti.o lib/crtn.o
+STATIC_LIBS = lib/libc.a
 SHARED_LIBS = lib/libc.so
 TOOL_LIBS = lib/musl-gcc.specs
-ALL_LIBS = $(CRT_LIBS) $(STATIC_LIBS) $(SHARED_LIBS) $(TOOL_LIBS)
+ALL_LIBS = $(CRT_LIBS) $(STATIC_LIBS) $(SHARED_LIBS) $(EMPTY_LIBS) $(TOOL_LIBS)
 ALL_TOOLS = tools/musl-gcc
 
 LDSO_PATHNAME = $(syslibdir)/ld-musl-$(ARCH).so.1
@@ -57,6 +64,9 @@ clean:
 	rm -f $(GENH) 
 	rm -f include/bits
 
+distclean: clean
+	rm -f config.mak
+
 include/bits:
 	@test "$(ARCH)" || { echo "Please set ARCH in config.mak before running make." ; exit 1 ; }
 	ln -sf ../arch/$(ARCH)/bits $@
@@ -67,20 +77,21 @@ include/bits/alltypes.h: include/bits/alltypes.h.sh
 	sh $< > $@
 
 %.o: $(ARCH)/%.s
-	$(CC) $(CFLAGS) $(INC) -c -o $@ $<
+	$(CC) $(CFLAGS_ALL_STATIC) -c -o $@ $<
 
-%.o: %.c $(GENH)
-	$(CC) $(CFLAGS) $(INC) -c -o $@ $<
+%.o: %.c $(GENH) $(IMPH)
+	$(CC) $(CFLAGS_ALL_STATIC) -c -o $@ $<
 
 %.lo: $(ARCH)/%.s
-	$(CC) $(CFLAGS) $(INC) $(PIC) -c -o $@ $<
+	$(CC) $(CFLAGS_ALL_SHARED) -c -o $@ $<
 
-%.lo: %.c $(GENH)
-	$(CC) $(CFLAGS) $(INC) $(PIC) -c -o $@ $<
+%.lo: %.c $(GENH) $(IMPH)
+	$(CC) $(CFLAGS_ALL_SHARED) -c -o $@ $<
 
 lib/libc.so: $(LOBJS)
-	$(CC) $(LDFLAGS) -Wl,-soname=libc.so -o $@ $(LOBJS) -lgcc
-	$(OBJCOPY) --weaken $@
+	$(CC) $(CFLAGS_ALL_SHARED) $(LDFLAGS) -nostdlib -shared \
+	-Wl,-e,_start -Wl,-Bsymbolic-functions \
+	-Wl,-soname=libc.so -o $@ $(LOBJS) -lgcc
 
 lib/libc.a: $(OBJS)
 	rm -f $@
@@ -113,9 +124,11 @@ $(DESTDIR)$(libdir)/%: lib/%
 $(DESTDIR)$(includedir)/%: include/%
 	install -D -m 644 $< $@
 
-$(DESTDIR)$(LDSO_PATHNAME): lib/libc.so
-	install -d -m 755 $(DESTDIR)$(syslibdir) || true
+$(DESTDIR)$(LDSO_PATHNAME): $(DESTDIR)$(syslibdir)
 	ln -sf $(libdir)/libc.so $@ || true
+
+$(DESTDIR)$(syslibdir):
+	install -d -m 755 $(DESTDIR)$(syslibdir)
 
 .PRECIOUS: $(CRT_LIBS:lib/%=crt/%)
 

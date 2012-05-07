@@ -67,8 +67,7 @@ struct dso {
 	char buf[];
 };
 
-struct __pthread;
-struct __pthread *__pthread_self_init(void);
+void __init_ssp(size_t *);
 
 static struct dso *head, *tail, *libc;
 static char *env_path, *sys_path, *r_path;
@@ -633,6 +632,8 @@ void *__dynlink(int argc, char **argv)
 	debug.state = 0;
 	_dl_debug_state();
 
+	if (ssp_used) __init_ssp(auxv);
+
 	do_init_fini(tail);
 
 	if (!rtld_used) {
@@ -640,8 +641,6 @@ void *__dynlink(int argc, char **argv)
 		free(sys_path);
 		reclaim((void *)builtin_dsos, 0, sizeof builtin_dsos);
 	}
-
-	if (ssp_used) __pthread_self_init();
 
 	errno = 0;
 	return (void *)aux[AT_ENTRY];
@@ -724,7 +723,7 @@ static void *do_dlsym(struct dso *p, const char *s, void *ra)
 	}
 	if (p == head || p == RTLD_DEFAULT) {
 		void *res = find_sym(head, s, 0);
-		if (!res) errflag = 1;
+		if (!res) goto failed;
 		return res;
 	}
 	h = hash(s);
@@ -737,6 +736,7 @@ static void *do_dlsym(struct dso *p, const char *s, void *ra)
 		if (sym && sym->st_value && (1<<(sym->st_info&0xf) & OK_TYPES))
 			return p->deps[i]->base + sym->st_value;
 	}
+failed:
 	errflag = 1;
 	snprintf(errbuf, sizeof errbuf, "Symbol not found: %s", s);
 	return 0;
