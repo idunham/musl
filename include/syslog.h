@@ -62,8 +62,7 @@ void syslog (int, const char *, ...);
 #if defined(_GNU_SOURCE) || defined(_BSD_SOURCE)
 #define _PATH_LOG "/dev/log"
 void vsyslog (int, const char *, va_list);
-
-#ifdef SYSLOG_NAMES
+#if defined(SYSLOG_NAMES)
 #define __NEED_va_list
 #include <bits/alltypes.h>
 #define	INTERNAL_NOPRI 0x10
