@@ -1,4 +1,3 @@
-include/fcntl.h
 include/tgmath.h
 include/glob.h
 include/arpa/inet.h
