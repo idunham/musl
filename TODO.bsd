@@ -16,9 +16,8 @@ include/time.h
 include/netinet/ip.h
 include/netinet/tcp.h
 include/netinet/ip_icmp.h
-include/netinet/in.h
+include/netinet/in.h		Missing structs
 include/netinet/if_ether.h
-include/strings.h
 include/shadow.h
 include/pwd.h
 include/utmp.h
