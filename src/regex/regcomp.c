@@ -1052,8 +1052,6 @@ tre_parse(tre_parse_ctx_t *ctx)
 	  }
 
 	case PARSE_UNION:
-	  if (!*ctx->re)
-	    break;
 	  switch (*ctx->re)
 	    {
 	    case CHAR_PIPE:
@@ -1086,8 +1084,6 @@ tre_parse(tre_parse_ctx_t *ctx)
 
 	case PARSE_POSTFIX:
 	  /* Parse postfix operators. */
-	  if (!*ctx->re)
-	    break;
 	  switch (*ctx->re)
 	    {
 	    case CHAR_PLUS:
@@ -1353,6 +1349,8 @@ tre_parse(tre_parse_ctx_t *ctx)
 	      if (ctx->cflags & REG_EXTENDED
 		  || ctx->re == ctx->re_start)
 		{
+		  if (!(ctx->cflags & REG_EXTENDED))
+		    STACK_PUSHX(stack, int, PARSE_CATENATION);
 		  result = tre_ast_new_literal(ctx->mem, ASSERTION,
 					       ASSERT_AT_BOL, -1);
 		  if (result == NULL)
