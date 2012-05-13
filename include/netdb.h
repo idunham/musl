@@ -44,9 +44,6 @@ struct addrinfo
 #define NI_DGRAM        0x10
 /*#define NI_NUMERICSCOPE */
 
-#define NI_MAXHOST 255
-#define NI_MAXSERV 32
-
 #define EAI_BADFLAGS   -1
 #define EAI_NONAME     -2
 #define EAI_AGAIN      -3
@@ -57,11 +54,6 @@ struct addrinfo
 #define EAI_MEMORY     -10
 #define EAI_SYSTEM     -11
 #define EAI_OVERFLOW   -12
-
-#ifdef _GNU_SOURCE
-#define EAI_NODATA     -5
-#define EAI_ADDRFAMILY -9
-#endif
 
 int getaddrinfo (const char *, const char *, const struct addrinfo *, struct addrinfo **);
 void freeaddrinfo (struct addrinfo *);
@@ -104,18 +96,9 @@ struct protoent
 	int p_proto;
 };
 
-extern int h_errno;
-
-#define HOST_NOT_FOUND 1
-#define TRY_AGAIN      2
-#define NO_RECOVERY    3
-#define NO_DATA        4
-
 void sethostent (int);
 void endhostent (void);
 struct hostent *gethostent (void);
-struct hostent *gethostbyaddr (const void *, socklen_t, int);
-struct hostent *gethostbyname (const char *);
 
 void setnetent (int);
 void endnetent (void);
@@ -137,12 +120,33 @@ struct protoent *getprotobynumber (int);
 
 #ifdef _GNU_SOURCE
 const char *hstrerror(int);
+struct hostent *gethostbyname (const char *);
 int gethostbyname_r(const char *, struct hostent *, char *, size_t, struct hostent **, int *);
 int gethostbyname2_r(const char *, int, struct hostent *, char *, size_t, struct hostent **, int *);
 struct hostent *gethostbyname2(const char *, int);
+struct hostent *gethostbyaddr (const void *, socklen_t, int);
 int gethostbyaddr_r(const void *, socklen_t, int, struct hostent *, char *, size_t, struct hostent **, int *);
 int getservbyport_r(int, const char *, struct servent *, char *, size_t, struct servent **);
 int getservbyname_r(const char *, const char *, struct servent *, char *, size_t, struct servent **);
+#ifdef __GNUC__
+__attribute__((const))
+#endif
+int *__h_errno_location(void);
+#define h_errno (*__h_errno_location())
+#define EAI_NODATA     -5
+#define EAI_ADDRFAMILY -9
+#define EAI_INPROGRESS -100
+#define EAI_CANCELED   -101
+#define EAI_NOTCANCELED -102
+#define EAI_ALLDONE    -103
+#define EAI_INTR       -104
+#define EAI_IDN_ENCODE -105
+#define NI_MAXHOST 255
+#define NI_MAXSERV 32
+#define HOST_NOT_FOUND 1
+#define TRY_AGAIN      2
+#define NO_RECOVERY    3
+#define NO_DATA        4
 #endif
 
 
