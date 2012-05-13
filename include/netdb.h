@@ -55,6 +55,11 @@ struct addrinfo
 #define EAI_SYSTEM     -11
 #define EAI_OVERFLOW   -12
 
+#ifdef _GNU_SOURCE
+#define EAI_NODATA     -5
+#define EAI_ADDRFAMILY -9
+#endif
+
 int getaddrinfo (const char *, const char *, const struct addrinfo *, struct addrinfo **);
 void freeaddrinfo (struct addrinfo *);
 int getnameinfo (const struct sockaddr *, socklen_t, char *, socklen_t, char *, socklen_t, int);
