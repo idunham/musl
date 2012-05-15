@@ -33,6 +33,7 @@ struct utmp *pututline(const struct utmp *);
 void         setutent(void);
 
 void updwtmp(const char *, const struct utmp *);
+void logwtmp(const char *, const char *, const char *);
 
 #define _PATH_UTMP "/dev/null"
 #define _PATH_WTMP "/dev/null"
