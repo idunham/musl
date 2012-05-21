@@ -1,5 +1,4 @@
 include/glob.h
-include/arpa/inet.h
 include/sys/select.h
 include/sys/uio.h
 include/sys/stat.h
