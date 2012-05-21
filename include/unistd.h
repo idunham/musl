@@ -69,10 +69,13 @@ int rmdir(const char *);
 int truncate(const char *, off_t);
 int ftruncate(int, off_t);
 
+#ifndef F_OK
 #define F_OK 0
 #define R_OK 4
 #define W_OK 2
 #define X_OK 1
+#endif
+
 int access(const char *, int);
 int faccessat(int, const char *, int, int);
 
@@ -133,10 +136,12 @@ long fpathconf(int, int);
 long sysconf(int);
 size_t confstr(int, char *, size_t);
 
+#ifndef F_ULOCK
 #define F_ULOCK 0
 #define F_LOCK  1
 #define F_TLOCK 2
 #define F_TEST  3
+#endif
 
 #if defined(_XOPEN_SOURCE) || defined(_GNU_SOURCE)
 int lockf(int, int, off_t);

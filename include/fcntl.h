@@ -87,7 +87,7 @@ int posix_fallocate(int, off_t, off_t);
 #define FNONBLOCK O_NONBLOCK
 #define FNDELAY O_NDELAY
 
-#ifndef _UNISTD_H
+#ifndef F_OK
 #define F_OK 0
 #define R_OK 4
 #define W_OK 2
