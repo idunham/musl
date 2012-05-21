@@ -1,7 +1,6 @@
 include/tgmath.h
 include/glob.h
 include/arpa/inet.h
-include/stdlib.h
 include/sys/select.h
 include/sys/wait.h
 include/sys/socket.h
@@ -20,7 +19,6 @@ include/netinet/if_ether.h
 include/shadow.h
 include/pwd.h
 include/utmp.h
-include/netdb.h
 include/endian.h
 include/grp.h
 include/net/if.h
