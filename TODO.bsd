@@ -1,7 +1,6 @@
 include/glob.h
 include/arpa/inet.h
 include/sys/select.h
-include/sys/wait.h
 include/sys/socket.h
 include/sys/uio.h
 include/sys/mman.h
