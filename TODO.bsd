@@ -1,5 +1,4 @@
 include/glob.h
-include/sys/select.h
 include/sys/uio.h
 include/setjmp.h
 include/dirent.h
