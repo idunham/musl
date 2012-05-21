@@ -1,9 +1,7 @@
 include/glob.h
 include/arpa/inet.h
 include/sys/select.h
-include/sys/socket.h
 include/sys/uio.h
-include/sys/mman.h
 include/sys/stat.h
 include/setjmp.h
 include/dirent.h
