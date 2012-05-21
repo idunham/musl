@@ -12,5 +12,4 @@ include/netinet/ip.h
 include/netinet/tcp.h
 include/netinet/ip_icmp.h
 include/netinet/if_ether.h
-include/grp.h
 include/net/if.h
