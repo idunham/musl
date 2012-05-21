@@ -17,8 +17,6 @@ include/netinet/ip_icmp.h
 include/netinet/in.h		Missing structs
 include/netinet/if_ether.h
 include/shadow.h
-include/pwd.h
-include/utmp.h
 include/endian.h
 include/grp.h
 include/net/if.h
