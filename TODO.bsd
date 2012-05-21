@@ -1,4 +1,1 @@
-include/glob.h
-include/sys/uio.h
 include/setjmp.h
-include/dirent.h
