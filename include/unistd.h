@@ -160,6 +160,7 @@ int sethostname(const char *, size_t);
 int usleep(unsigned);
 unsigned ualarm(unsigned, unsigned);
 int setgroups(size_t, const gid_t []);
+char *getpass(const char *);
 #endif
 
 #ifdef _GNU_SOURCE
@@ -175,7 +176,6 @@ int getdtablesize(void);
 void setusershell(void);
 void endusershell(void);
 char *getusershell(void);
-char *getpass(const char *);
 #endif
 
 #ifdef _LARGEFILE64_SOURCE
