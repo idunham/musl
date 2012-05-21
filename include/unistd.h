@@ -175,6 +175,7 @@ int getdtablesize(void);
 void setusershell(void);
 void endusershell(void);
 char *getusershell(void);
+char *getpass(const char *);
 #endif
 
 #ifdef _LARGEFILE64_SOURCE
