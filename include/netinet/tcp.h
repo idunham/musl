@@ -5,7 +5,7 @@
 #if defined(_GNU_SOURCE) || defined(_BSD_SOURCE)
 #include <sys/types.h>
 #include <sys/socket.h>
-#define	TCP_MAXSEG	 2
+#define TCP_MAXSEG	 2
 #define TCP_CORK	 3
 #define TCP_KEEPIDLE	 4
 #define TCP_KEEPINTVL	 5
