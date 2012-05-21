@@ -14,7 +14,8 @@ extern "C" {
 
 #define __NEED_size_t
 #if defined(_POSIX_SOURCE) || defined(_POSIX_C_SOURCE) \
- || defined(_XOPEN_SOURCE) || defined(_GNU_SOURCE) || defined(_BSD_SOURCE)
+ || defined(_XOPEN_SOURCE) || defined(_GNU_SOURCE) \
+ || defined(_BSD_SOURCE)
 #define __NEED_locale_t
 #endif
 
@@ -51,9 +52,13 @@ size_t strlen (const char *);
 
 char *strerror (int);
 
+#if defined(_BSD_SOURCE) || defined(_GNU_SOURCE)
+#include <strings.h>
+#endif
 
 #if defined(_POSIX_SOURCE) || defined(_POSIX_C_SOURCE) \
- || defined(_XOPEN_SOURCE) || defined(_GNU_SOURCE) || defined(_BSD_SOURCE)
+ || defined(_XOPEN_SOURCE) || defined(_GNU_SOURCE) \
+ || defined(_BSD_SOURCE)
 char *strtok_r (char *, const char *, char **);
 int strerror_r (int, char *, size_t);
 char *stpcpy(char *, const char *);
@@ -67,19 +72,9 @@ int strcoll_l (const char *, const char *, locale_t);
 size_t strxfrm_l (char *, const char *, size_t, locale_t);
 #endif
 
-#if defined(_XOPEN_SOURCE) || defined(_GNU_SOURCE) || defined(_BSD_SOURCE)
+#if defined(_XOPEN_SOURCE) || defined(_GNU_SOURCE) \
+ || defined(_BSD_SOURCE)
 void *memccpy (void *, const void *, int, size_t);
-#endif
-
-#if defined(_BSD_SOURCE) || defined(_GNU_SOURCE)
-int bcmp (const void *, const void *, size_t);
-void bcopy (const void *, void *, size_t);
-void bzero (void *, size_t);
-int strcasecmp (const char *, const char *);
-int strncasecmp (const char *, const char *, size_t);
-char *index (const char *, int);
-char *rindex (const char *, int);
-int ffs (int);
 #endif
 
 #ifdef _BSD_SOURCE

@@ -206,12 +206,15 @@ void (*sigset(int, void (*)(int)))(int);
 #endif
 
 #if defined(_GNU_SOURCE) || defined(_BSD_SOURCE)
-typedef void (*sighandler_t)(int);
-typedef sighandler_t sig_t;
 void (*bsd_signal(int, void (*)(int)))(int);
 #endif
 
+#ifdef _BSD_SOURCE
+typedef void (*sig_t)(int);
+#endif
+
 #ifdef _GNU_SOURCE
+typedef void (*sighandler_t)(int);
 int sigisemptyset(const sigset_t *);
 #define SA_NOMASK SA_NODEFER
 #define SA_ONESHOT SA_RESETHAND

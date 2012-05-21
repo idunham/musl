@@ -147,8 +147,6 @@ int *__h_errno_location(void);
 #define TRY_AGAIN      2
 #define NO_RECOVERY    3
 #define NO_DATA        4
-
-int innetgr(const char *, const char *, const char *, const char *);
 #endif
 
 
