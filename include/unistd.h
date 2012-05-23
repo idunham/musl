@@ -9,9 +9,6 @@ extern "C" {
 #define STDOUT_FILENO 1
 #define STDERR_FILENO 2
 
-#undef SEEK_SET
-#undef SEEK_CUR
-#undef SEEK_END
 #define SEEK_SET 0
 #define SEEK_CUR 1
 #define SEEK_END 2
@@ -69,12 +66,10 @@ int rmdir(const char *);
 int truncate(const char *, off_t);
 int ftruncate(int, off_t);
 
-#ifndef F_OK
 #define F_OK 0
 #define R_OK 4
 #define W_OK 2
 #define X_OK 1
-#endif
 
 int access(const char *, int);
 int faccessat(int, const char *, int, int);
@@ -143,29 +138,41 @@ size_t confstr(int, char *, size_t);
 #define F_TEST  3
 #endif
 
-#if defined(_XOPEN_SOURCE) || defined(_GNU_SOURCE)
+#if defined(_XOPEN_SOURCE) || defined(_GNU_SOURCE) || defined(_BSD_SOURCE)
 int lockf(int, int, off_t);
-pid_t setpgrp(void);
-char *crypt(const char *, const char *);
-void encrypt(char *, int);
-void swab(const void *, void *, ssize_t);
 long gethostid(void);
 int nice(int);
 void sync(void);
 #endif
 
+#if defined(_XOPEN_SOURCE) || defined(_GNU_SOURCE)
+pid_t setpgrp(void);
+char *crypt(const char *, const char *);
+void encrypt(char *, int);
+void swab(const void *, void *, ssize_t);
+#endif
+
 #if defined(_GNU_SOURCE) || defined(_BSD_SOURCE)
+#define L_SET 0
+#define L_INCR 1
+#define L_XTND 2
 int brk(void *);
 void *sbrk(intptr_t);
 pid_t vfork(void);
 int vhangup(void);
 int chroot(const char *);
 int getpagesize(void);
+int getdtablesize(void);
 int sethostname(const char *, size_t);
+int getdomainname(char *, size_t);
 int usleep(unsigned);
 unsigned ualarm(unsigned, unsigned);
 int setgroups(size_t, const gid_t []);
 char *getpass(const char *);
+int daemon(int, int);
+void setusershell(void);
+void endusershell(void);
+char *getusershell(void);
 #endif
 
 #ifdef _GNU_SOURCE
@@ -175,12 +182,6 @@ int setresgid(gid_t, gid_t, gid_t);
 int getresuid(uid_t *, uid_t *, uid_t *);
 int getresgid(gid_t *, gid_t *, gid_t *);
 char *get_current_dir_name(void);
-int daemon(int, int);
-int getdomainname(char *, size_t);
-int getdtablesize(void);
-void setusershell(void);
-void endusershell(void);
-char *getusershell(void);
 #endif
 
 #ifdef _LARGEFILE64_SOURCE
