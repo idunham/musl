@@ -34,6 +34,10 @@ void updwtmpx(const char *f, const struct utmpx *u)
 {
 }
 
+void logwtmp(const char *l, const char *n, const char *h)
+{
+}
+
 weak_alias(endutxent, endutent);
 weak_alias(setutxent, setutent);
 weak_alias(getutxent, getutent);
