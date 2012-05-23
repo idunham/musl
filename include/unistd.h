@@ -131,12 +131,10 @@ long fpathconf(int, int);
 long sysconf(int);
 size_t confstr(int, char *, size_t);
 
-#ifndef F_ULOCK
 #define F_ULOCK 0
 #define F_LOCK  1
 #define F_TLOCK 2
 #define F_TEST  3
-#endif
 
 #if defined(_XOPEN_SOURCE) || defined(_GNU_SOURCE) || defined(_BSD_SOURCE)
 int lockf(int, int, off_t);
