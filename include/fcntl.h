@@ -86,6 +86,7 @@ int posix_fallocate(int, off_t, off_t);
 #define FASYNC O_ASYNC
 #define FNONBLOCK O_NONBLOCK
 #define FNDELAY O_NDELAY
+
 #define F_OK 0
 #define R_OK 4
 #define W_OK 2
@@ -94,6 +95,7 @@ int posix_fallocate(int, off_t, off_t);
 #define F_LOCK  1
 #define F_TLOCK 2
 #define F_TEST  3
+
 int lockf(int, int, off_t);
 #endif
 

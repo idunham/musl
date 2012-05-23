@@ -13,12 +13,6 @@ extern "C" {
 #define SEEK_CUR 1
 #define SEEK_END 2
 
-#if defined(_BSD_SOURCE) && !defined(L_SET)
-#define L_SET	SEEK_SET
-#define L_INCR	SEEK_CUR
-#define L_XTND	SEEK_END
-#endif
-
 #undef NULL
 #ifdef __cplusplus
 #define NULL 0
