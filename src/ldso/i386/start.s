@@ -2,18 +2,21 @@
 .global _start
 _start:
 	xor %ebp,%ebp
-	pop %ecx
-	mov %esp,%eax
+	pop %edi
+	mov %esp,%esi
 	and $-16,%esp
-	mov %eax,%esi
-	mov %ecx,%edi
 	push %ebp
-	call 1f
-1:	addl $_GLOBAL_OFFSET_TABLE_,(%esp)
-	push %eax
-	push %ecx
+	push %ebp
+	push %esi
+	push %edi
 	call __dynlink
 	mov %esi,%esp
+1:	dec %edi
+	pop %esi
+	cmp $-1,%esi
+	jz 1b
+	inc %edi
+	push %esi
 	push %edi
 	xor %edx,%edx
 	jmp *%eax
