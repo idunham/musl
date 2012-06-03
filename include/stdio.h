@@ -157,15 +157,22 @@ char *tempnam(const char *, const char *);
 #if defined(_GNU_SOURCE) || defined(_BSD_SOURCE)
 #define L_cuserid 20
 char *cuserid(char *);
-#undef off64_t
-#define off64_t off_t
-int asprintf(char **, const char *, ...);
-int vasprintf(char **, const char *, va_list);
 void setlinebuf(FILE *);
 void setbuffer(FILE *, char *, size_t);
-int fpurge(FILE *);
 int fgetc_unlocked(FILE *);
 int fputc_unlocked(int, FILE *);
+int fflush_unlocked(FILE *);
+size_t fread_unlocked(void *, size_t, size_t, FILE *);
+size_t fwrite_unlocked(const void *, size_t, size_t, FILE *);
+void clearerr_unlocked(FILE *);
+int feof_unlocked(FILE *);
+int ferror_unlocked(FILE *);
+int fileno_unlocked(FILE *);
+#endif
+
+#ifdef _GNU_SOURCE
+int asprintf(char **, const char *, ...);
+int vasprintf(char **, const char *, va_list);
 char *fgets_unlocked(char *, int, FILE *);
 int fputs_unlocked(const char *, FILE *);
 #endif
