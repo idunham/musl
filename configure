@@ -69,8 +69,8 @@ fi
 
 tryldflag () {
 printf "checking whether linker accepts %s... " "$2"
-echo "int main() { return 0; }" > "$tmpc"
-if "$CC" "$2" -o /dev/null "$tmpc" 2>/dev/null ; then
+echo "typedef int x;" > "$tmpc"
+if "$CC" -nostdlib -shared "$2" -o /dev/null "$tmpc" 2>/dev/null ; then
 printf "yes\n"
 eval "$1=\"\${$1} \$2\""
 eval "$1=\${$1# }"
@@ -263,7 +263,16 @@ tryflag CFLAGS_AUTO -Wno-unused-but-set-variable
 tryflag CFLAGS_AUTO -Wno-unknown-pragmas
 fi
 
+# Some patched GCC builds have these defaults messed up...
+tryflag CFLAGS_AUTO -fno-stack-protector
 tryldflag LDFLAGS_AUTO -Wl,--hash-style=sysv
+
+# Disable dynamic linking if ld is broken and can't do -Bsymbolic-functions
+LDFLAGS_DUMMY=
+tryldflag LDFLAGS_DUMMY -Wl,-Bsymbolic-functions || {
+printf "warning: disabling dynamic linking support\n"
+shared=no
+}
 
 
 printf "creating config.mak... "
