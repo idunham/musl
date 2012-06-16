@@ -110,10 +110,10 @@ struct tm *getdate (const char *);
 #endif
 
 
-#if defined(_XOPEN_SOURCE) || defined(_GNU_SOURCE)
+#if defined(_GNU_SOURCE) || defined(_BSD_SOURCE)
 int stime(time_t *);
+time_t timegm(struct tm *);
 #endif
-
 
 #ifdef __cplusplus
 }
