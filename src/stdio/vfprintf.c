@@ -296,7 +296,7 @@ static int fmt_fp(FILE *f, long double y, int w, int p, int fl, int t)
 		e2-=sh;
 	}
 	while (e2<0) {
-		uint32_t carry=0, *z2;
+		uint32_t carry=0, *b;
 		int sh=MIN(9,-e2);
 		for (d=a; d<z; d++) {
 			uint32_t rm = *d & (1<<sh)-1;
@@ -306,8 +306,8 @@ static int fmt_fp(FILE *f, long double y, int w, int p, int fl, int t)
 		if (!*a) a++;
 		if (carry) *z++ = carry;
 		/* Avoid (slow!) computation past requested precision */
-		z2 = ((t|32)=='f' ? r : a) + 2 + p/9;
-		z = MIN(z, z2);
+		b = (t|32)=='f' ? r : a;
+		if (z-b > 2+p/9) z = b+2+p/9;
 		e2+=sh;
 	}
 
@@ -319,7 +319,7 @@ static int fmt_fp(FILE *f, long double y, int w, int p, int fl, int t)
 	if (j < 9*(z-r-1)) {
 		uint32_t x;
 		/* We avoid C's broken division of negative numbers */
-		d = r + 1 + (j+9*LDBL_MAX_EXP)/9 - LDBL_MAX_EXP;
+		d = r + 1 + ((j+9*LDBL_MAX_EXP)/9 - LDBL_MAX_EXP);
 		j += 9*LDBL_MAX_EXP;
 		j %= 9;
 		for (i=10, j++; j<9; i*=10, j++);

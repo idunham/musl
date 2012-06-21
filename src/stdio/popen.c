@@ -1,4 +1,11 @@
 #include "stdio_impl.h"
+#include "syscall.h"
+
+static inline void nc_close(int fd)
+{
+	__syscall(SYS_close, fd);
+}
+#define close(x) nc_close(x)
 
 FILE *popen(const char *cmd, const char *mode)
 {
@@ -31,9 +38,9 @@ FILE *popen(const char *cmd, const char *mode)
 		close(p[1]);
 		return NULL;
 	case 0:
-		dup2(p[1-op], 1-op);
-		close(p[0]);
-		close(p[1]);
+		if (dup2(p[1-op], 1-op) < 0) _exit(127);
+		if (p[0] != 1-op) close(p[0]);
+		if (p[1] != 1-op) close(p[1]);
 		execl("/bin/sh", "sh", "-c", cmd, (char *)0);
 		_exit(127);
 	}
