@@ -1,6 +1,7 @@
+#define _GNU_SOURCE
 #include <stdio.h>
 
 int putw(int x, FILE *f)
 {
-	return fwrite(&x, sizeof x, 1, f) ? x : EOF;
+	return (int)fwrite(&x, sizeof x, 1, f)-1;
 }
