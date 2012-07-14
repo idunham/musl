@@ -7,32 +7,32 @@ long (__syscall)(long, ...);
 
 static inline long __syscall0(long n)
 {
-	return (__syscall)(n, 0, 0, 0, 0, 0, 0);
+	return (__syscall)(n);
 }
 
 static inline long __syscall1(long n, long a)
 {
-	return (__syscall)(n, a, 0, 0, 0, 0, 0);
+	return (__syscall)(n, a);
 }
 
 static inline long __syscall2(long n, long a, long b)
 {
-	return (__syscall)(n, a, b, 0, 0, 0, 0);
+	return (__syscall)(n, a, b);
 }
 
 static inline long __syscall3(long n, long a, long b, long c)
 {
-	return (__syscall)(n, a, b, c, 0, 0, 0);
+	return (__syscall)(n, a, b, c);
 }
 
 static inline long __syscall4(long n, long a, long b, long c, long d)
 {
-	return (__syscall)(n, a, b, c, d, 0, 0);
+	return (__syscall)(n, a, b, c, d);
 }
 
 static inline long __syscall5(long n, long a, long b, long c, long d, long e)
 {
-	return (__syscall)(n, a, b, c, d, e, 0);
+	return (__syscall)(n, a, b, c, d, e);
 }
 
 static inline long __syscall6(long n, long a, long b, long c, long d, long e, long f)
@@ -374,6 +374,8 @@ static inline long __syscall6(long n, long a, long b, long c, long d, long e, lo
 #define __NR_syncfs	373
 #define __NR_sendmmsg	374
 #define __NR_setns	375
+#define __NR_process_vm_readv	376
+#define __NR_process_vm_writev	377
 
 /* fixup legacy 16-bit junk */
 #undef __NR_lchown
@@ -781,6 +783,8 @@ static inline long __syscall6(long n, long a, long b, long c, long d, long e, lo
 #define SYS_syncfs	373
 #define SYS_sendmmsg	374
 #define SYS_setns	375
+#define SYS_process_vm_readv	376
+#define SYS_process_vm_writev	377
 
 /* fixup legacy 16-bit junk */
 #undef SYS_lchown
