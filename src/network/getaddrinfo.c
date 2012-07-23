@@ -58,7 +58,6 @@ int getaddrinfo(const char *host, const char *serv, const struct addrinfo *hint,
 	union sa sa = {{0}};
 	unsigned char reply[1024];
 	int i, j;
-	//char hostbuf[256];
 	char line[512];
 	FILE *f, _f;
 	unsigned char _buf[1024];
@@ -79,10 +78,23 @@ int getaddrinfo(const char *host, const char *serv, const struct addrinfo *hint,
 		port = strtoul(serv, &z, 10);
 		if (!*z && port > 65535) return EAI_SERVICE;
 		if (!port) {
+			size_t servlen = strlen(serv);
+			char *end = line;
+
 			if (flags & AI_NUMERICSERV) return EAI_SERVICE;
 
-			//f = fopen("/etc/services", "rb");
-			return EAI_SERVICE;
+			f = __fopen_rb_ca("/etc/services", &_f, _buf, sizeof _buf);
+			if (!f) return EAI_SERVICE;
+			while (fgets(line, sizeof line, f)) {
+				if (strncmp(line, serv, servlen) || !isspace(line[servlen]))
+					continue;
+				port = strtoul(line+servlen, &end, 10);
+				if (strncmp(end, proto==IPPROTO_UDP ? "/udp" : "/tcp", 4))
+					continue;
+				break;
+			}
+			__fclose_ca(f);
+			if (feof(f)) return EAI_SERVICE;
 		}
 		port = htons(port);
 	}
