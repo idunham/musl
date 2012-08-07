@@ -22,8 +22,6 @@ static char errbuf[128];
 
 #ifdef SHARED
 
-#include "reloc.h"
-
 #if ULONG_MAX == 0xffffffff
 typedef Elf32_Ehdr Ehdr;
 typedef Elf32_Phdr Phdr;
@@ -68,6 +66,8 @@ struct dso {
 	char buf[];
 };
 
+#include "reloc.h"
+
 void __init_ssp(size_t *);
 
 static struct dso *head, *tail, *libc;
@@ -105,9 +105,12 @@ static uint32_t hash(const char *s0)
 	return h & 0xfffffff;
 }
 
-static Sym *lookup(const char *s, uint32_t h, Sym *syms, uint32_t *hashtab, char *strings)
+static Sym *lookup(const char *s, uint32_t h, struct dso *dso)
 {
 	size_t i;
+	Sym *syms = dso->syms;
+	uint32_t *hashtab = dso->hashtab;
+	char *strings = dso->strings;
 	for (i=hashtab[2+h%hashtab[0]]; i; i=hashtab[2+hashtab[0]+i]) {
 		if (!strcmp(s, strings+syms[i].st_name))
 			return syms+i;
@@ -128,7 +131,7 @@ static void *find_sym(struct dso *dso, const char *s, int need_def)
 	for (; dso; dso=dso->next) {
 		Sym *sym;
 		if (!dso->global) continue;
-		sym = lookup(s, h, dso->syms, dso->hashtab, dso->strings);
+		sym = lookup(s, h, dso);
 		if (sym && (!need_def || sym->st_shndx) && sym->st_value
 		 && (1<<(sym->st_info&0xf) & OK_TYPES)
 		 && (1<<(sym->st_info>>4) & OK_BINDS)) {
@@ -140,8 +143,11 @@ static void *find_sym(struct dso *dso, const char *s, int need_def)
 	return def;
 }
 
-static void do_relocs(unsigned char *base, size_t *rel, size_t rel_size, size_t stride, Sym *syms, char *strings, struct dso *dso)
+static void do_relocs(struct dso *dso, size_t *rel, size_t rel_size, size_t stride)
 {
+	unsigned char *base = dso->base;
+	Sym *syms = dso->syms;
+	char *strings = dso->strings;
 	Sym *sym;
 	const char *name;
 	size_t sym_val, sym_size;
@@ -157,7 +163,7 @@ static void do_relocs(unsigned char *base, size_t *rel, size_t rel_size, size_t 
 		if (sym_index) {
 			sym = syms + sym_index;
 			name = strings + sym->st_name;
-			ctx = IS_COPY(type) ? dso->next : dso;
+			ctx = IS_COPY(type) ? head->next : head;
 			sym_val = (size_t)find_sym(ctx, name, IS_PLT(type));
 			if (!sym_val && sym->st_info>>4 != STB_WEAK) {
 				snprintf(errbuf, sizeof errbuf,
@@ -168,6 +174,8 @@ static void do_relocs(unsigned char *base, size_t *rel, size_t rel_size, size_t 
 				_exit(127);
 			}
 			sym_size = sym->st_size;
+		} else {
+			sym_val = sym_size = 0;
 		}
 		do_single_reloc(reloc_addr, type, sym_val, sym_size, base, rel[2]);
 	}
@@ -481,12 +489,13 @@ static void reloc_all(struct dso *p)
 	for (; p; p=p->next) {
 		if (p->relocated) continue;
 		decode_vec(p->dynv, dyn, DYN_CNT);
-		do_relocs(p->base, (void *)(p->base+dyn[DT_JMPREL]), dyn[DT_PLTRELSZ],
-			2+(dyn[DT_PLTREL]==DT_RELA), p->syms, p->strings, head);
-		do_relocs(p->base, (void *)(p->base+dyn[DT_REL]), dyn[DT_RELSZ],
-			2, p->syms, p->strings, head);
-		do_relocs(p->base, (void *)(p->base+dyn[DT_RELA]), dyn[DT_RELASZ],
-			3, p->syms, p->strings, head);
+#ifdef NEED_ARCH_RELOCS
+		do_arch_relocs(p, head);
+#endif
+		do_relocs(p, (void *)(p->base+dyn[DT_JMPREL]), dyn[DT_PLTRELSZ],
+			2+(dyn[DT_PLTREL]==DT_RELA));
+		do_relocs(p, (void *)(p->base+dyn[DT_REL]), dyn[DT_RELSZ], 2);
+		do_relocs(p, (void *)(p->base+dyn[DT_RELA]), dyn[DT_RELASZ], 3);
 		p->relocated = 1;
 	}
 }
@@ -681,9 +690,11 @@ void *__dynlink(int argc, char **argv)
 	 * all memory used by the dynamic linker. */
 	runtime = 1;
 
+#ifndef DYNAMIC_IS_RO
 	for (i=0; app->dynv[i]; i+=2)
 		if (app->dynv[i]==DT_DEBUG)
 			app->dynv[i+1] = (size_t)&debug;
+#endif
 	debug.ver = 1;
 	debug.bp = _dl_debug_state;
 	debug.head = head;
@@ -788,12 +799,11 @@ static void *do_dlsym(struct dso *p, const char *s, void *ra)
 		return res;
 	}
 	h = hash(s);
-	sym = lookup(s, h, p->syms, p->hashtab, p->strings);
+	sym = lookup(s, h, p);
 	if (sym && sym->st_value && (1<<(sym->st_info&0xf) & OK_TYPES))
 		return p->base + sym->st_value;
 	if (p->deps) for (i=0; p->deps[i]; i++) {
-		sym = lookup(s, h, p->deps[i]->syms,
-			p->deps[i]->hashtab, p->deps[i]->strings);
+		sym = lookup(s, h, p);
 		if (sym && sym->st_value && (1<<(sym->st_info&0xf) & OK_TYPES))
 			return p->deps[i]->base + sym->st_value;
 	}
