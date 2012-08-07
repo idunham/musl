@@ -31,83 +31,115 @@
 int iopl(int);
 int ioperm(unsigned long, unsigned long, int);
 
-static inline void outb(unsigned char __v, unsigned short __p)
+#if __STDC_VERSION__ >= 199901L
+inline
+#endif
+static void outb(unsigned char __v, unsigned short __p)
 {
 	asm volatile ("outb %0,%1" : : "a" (__v), "dN"(__p));
 }
 
-static inline void outw(unsigned short __v, unsigned short __p)
+#if __STDC_VERSION__ >= 199901L
+inline
+#endif
+static void outw(unsigned short __v, unsigned short __p)
 {
 	asm volatile ("outw %0,%1" : : "a" (__v), "dN"(__p));
 }
 
-static inline void outl(unsigned int __v, unsigned short __p)
+#if __STDC_VERSION__ >= 199901L
+inline
+#endif
+static void outl(unsigned int __v, unsigned short __p)
 {
 	asm volatile ("outl %0,%1" : : "a" (__v), "dN"(__p));
 }
 
-static inline unsigned char inb(unsigned short __p)
+#if __STDC_VERSION__ >= 199901L
+inline
+#endif
+static unsigned char inb(unsigned short __p)
 {
 	unsigned char __v;
 	asm volatile ("inb %1,%0" : "=a" (__v) : "dN"(__p));
 	return __v;
 }
 
-static inline unsigned short inw(unsigned short __p)
+#if __STDC_VERSION__ >= 199901L
+inline
+#endif
+static unsigned short inw(unsigned short __p)
 {
 	unsigned short __v;
 	asm volatile ("inw %1,%0" : "=a" (__v) : "dN"(__p));
 	return __v;
 }
 
-static inline unsigned int inl(unsigned short __p)
+#if __STDC_VERSION__ >= 199901L
+inline
+#endif
+static unsigned int inl(unsigned short __p)
 {
 	unsigned int __v;
 	asm volatile ("inl %1,%0" : "=a" (__v) : "dN"(__p));
 	return __v;
 }
 
-/* String I/O macros */
 
-static inline void
-outsb(unsigned short __p, const void *__d, unsigned long __n)
+#if __STDC_VERSION__ >= 199901L
+inline
+#endif
+static void outsb(unsigned short __p, const void *__d, unsigned long __n)
 {
 	asm volatile ("cld; rep; outsb"
 		      : "+S" (__d), "+c"(__n)
 		      : "d"(__p));
 }
 
-static inline void
-outsw(unsigned short __p, const void *__d, unsigned long __n)
+#if __STDC_VERSION__ >= 199901L
+inline
+#endif
+static void outsw(unsigned short __p, const void *__d, unsigned long __n)
 {
 	asm volatile ("cld; rep; outsw"
 		      : "+S" (__d), "+c"(__n)
 		      : "d"(__p));
 }
 
-static inline void
-outsl(unsigned short __p, const void *__d, unsigned long __n)
+#if __STDC_VERSION__ >= 199901L
+inline
+#endif
+static void outsl(unsigned short __p, const void *__d, unsigned long __n)
 {
 	asm volatile ("cld; rep; outsl"
 		      : "+S" (__d), "+c"(__n)
 		      : "d"(__p));
 }
 
-static inline void insb(unsigned short __p, void *__d, unsigned long __n)
+#if __STDC_VERSION__ >= 199901L
+inline
+#endif
+static void insb(unsigned short __p, void *__d, unsigned long __n)
 {
 	asm volatile ("cld; rep; insb"
 		      : "+D" (__d), "+c"(__n)
 		      : "d"(__p));
 }
 
-static inline void insw(unsigned short __p, void *__d, unsigned long __n)
+#if __STDC_VERSION__ >= 199901L
+inline
+#endif
+static void insw(unsigned short __p, void *__d, unsigned long __n)
 {
 	asm volatile ("cld; rep; insw"
 		      : "+D" (__d), "+c"(__n)
 		      : "d"(__p));
 }
 
-static inline void insl(unsigned short __p, void *__d, unsigned long __n)
+#if __STDC_VERSION__ >= 199901L
+inline
+#endif
+static void insl(unsigned short __p, void *__d, unsigned long __n)
 {
 	asm volatile ("cld; rep; insl"
 		      : "+D" (__d), "+c"(__n)
