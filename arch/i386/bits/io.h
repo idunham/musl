@@ -39,7 +39,7 @@ inline
 #endif
 static void outb(unsigned char __v, unsigned short __p)
 {
-	asm volatile ("outb %0,%1" : : "a" (__v), "dN" (__p));
+	__asm__ volatile ("outb %0,%1" : : "a" (__v), "dN" (__p));
 }
 
 #if __STDC_VERSION__ >= 199901L
@@ -47,7 +47,7 @@ inline
 #endif
 static void outw(unsigned short __v, unsigned short __p)
 {
-	asm volatile ("outw %0,%1" : : "a" (__v), "dN" (__p));
+	__asm__ volatile ("outw %0,%1" : : "a" (__v), "dN" (__p));
 }
 
 #if __STDC_VERSION__ >= 199901L
@@ -55,7 +55,7 @@ inline
 #endif
 static void outl(unsigned int __v, unsigned short __p)
 {
-	asm volatile ("outl %0,%1" : : "a" (__v), "dN" (__p));
+	__asm__ volatile ("outl %0,%1" : : "a" (__v), "dN" (__p));
 }
 
 #if __STDC_VERSION__ >= 199901L
@@ -64,7 +64,7 @@ inline
 static unsigned char inb(unsigned short __p)
 {
 	unsigned char __v;
-	asm volatile ("inb %1,%0" : "=a" (__v) : "dN" (__p));
+	__asm__ volatile ("inb %1,%0" : "=a" (__v) : "dN" (__p));
 	return __v;
 }
 
@@ -74,7 +74,7 @@ inline
 static unsigned short inw(unsigned short __p)
 {
 	unsigned short __v;
-	asm volatile ("inw %1,%0" : "=a" (__v) : "dN" (__p));
+	__asm__ volatile ("inw %1,%0" : "=a" (__v) : "dN" (__p));
 	return __v;
 }
 
@@ -84,7 +84,7 @@ inline
 static unsigned int inl(unsigned short __p)
 {
 	unsigned int __v;
-	asm volatile ("inl %1,%0" : "=a" (__v) : "dN" (__p));
+	__asm__ volatile ("inl %1,%0" : "=a" (__v) : "dN" (__p));
 	return __v;
 }
 
@@ -93,7 +93,7 @@ inline
 #endif
 static void outsb(unsigned short __p, const void *__d, unsigned long __n)
 {
-	asm volatile ("cld; rep; outsb"
+	__asm__ volatile ("cld; rep; outsb"
 		      : "+S" (__d), "+c" (__n)
 		      : "d" (__p));
 }
@@ -103,7 +103,7 @@ inline
 #endif
 static void outsw(unsigned short __p, const void *__d, unsigned long __n)
 {
-	asm volatile ("cld; rep; outsw"
+	__asm__ volatile ("cld; rep; outsw"
 		      : "+S" (__d), "+c" (__n)
 		      : "d" (__p));
 }
@@ -113,7 +113,7 @@ inline
 #endif
 static void outsl(unsigned short __p, const void *__d, unsigned long __n)
 {
-	asm volatile ("cld; rep; outsl"
+	__asm__ volatile ("cld; rep; outsl"
 		      : "+S" (__d), "+c"(__n)
 		      : "d" (__p));
 }
@@ -123,7 +123,7 @@ inline
 #endif
 static void insb(unsigned short __p, void *__d, unsigned long __n)
 {
-	asm volatile ("cld; rep; insb"
+	__asm__ volatile ("cld; rep; insb"
 		      : "+D" (__d), "+c" (__n)
 		      : "d" (__p));
 }
@@ -133,7 +133,7 @@ inline
 #endif
 static void insw(unsigned short __p, void *__d, unsigned long __n)
 {
-	asm volatile ("cld; rep; insw"
+	__asm__ volatile ("cld; rep; insw"
 		      : "+D" (__d), "+c" (__n)
 		      : "d" (__p));
 }
@@ -143,7 +143,7 @@ inline
 #endif
 static void insl(unsigned short __p, void *__d, unsigned long __n)
 {
-	asm volatile ("cld; rep; insl"
+	__asm__ volatile ("cld; rep; insl"
 		      : "+D" (__d), "+c" (__n)
 		      : "d" (__p));
 }
