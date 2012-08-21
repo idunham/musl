@@ -3,6 +3,7 @@
 #include <string.h>
 #include <limits.h>
 #include <stdlib.h>
+#include "libc.h"
 
 char *optarg;
 int optind=1, opterr=1, optopt;
@@ -61,3 +62,5 @@ int getopt(int argc, char * const argv[], const char *optstring)
 	}
 	return c;
 }
+
+weak_alias(getopt, __posix_getopt);
