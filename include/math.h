@@ -72,6 +72,7 @@ union __double_repr { double __f; __uint64_t __i; };
 	sizeof(x) == sizeof(double) ? (__DOUBLE_BITS(x) & (__uint64_t)-1>>1) < (__uint64_t)0x7ff<<52 : \
 	__fpclassifyl(x) > FP_INFINITE)
 
+<<<<<<< HEAD
 int __signbit(double);
 int __signbitf(float);
 int __signbitl(long double);
@@ -87,6 +88,9 @@ int __signbitl(long double);
 inline
 #endif
 static int __isrel(long double __x, long double __y, int __rel)
+=======
+static inline int __isrel(long double __x, long double __y, int __rel)
+>>>>>>> parent of db3e78c... make math.h compatibe with c89
 {
 	if (isunordered(__x, __y)) return 0;
 	if (__rel==-2) return __x < __y;
