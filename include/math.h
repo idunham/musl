@@ -5,6 +5,12 @@
 extern "C" {
 #endif
 
+#if (__STDC_VERSION__ >= 199901L)
+#define __inline inline
+#elif (__STDC_VERSION__ < 199901L) && !defined(__GNUC__)
+#define inline
+#endif
+
 #define __NEED_float_t
 #define __NEED_double_t
 #define __NEED___uint16_t
@@ -83,10 +89,7 @@ int __signbitl(long double);
 
 #define isunordered(x,y) (isnan((x)) ? ((void)(y),1) : isnan((y)))
 
-#if __STDC_VERSION__ >= 199901L
-inline
-#endif
-static int __isrel(long double __x, long double __y, int __rel)
+__inline static int __isrel(long double __x, long double __y, int __rel)
 {
 	if (isunordered(__x, __y)) return 0;
 	if (__rel==-2) return __x < __y;
