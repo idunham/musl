@@ -38,11 +38,14 @@ void *malloc (size_t);
 void *calloc (size_t, size_t);
 void *realloc (void *, size_t);
 void free (void *);
+void *aligned_alloc(size_t alignment, size_t size);
 
 void abort (void);
 int atexit (void (*) (void));
 void exit (int);
 void _Exit (int);
+int at_quick_exit (void (*) (void));
+void quick_exit (int);
 
 char *getenv (const char *);
 
