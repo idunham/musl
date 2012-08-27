@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -53,6 +54,7 @@ struct dso {
 	int refcnt;
 	Sym *syms;
 	uint32_t *hashtab;
+	uint32_t *ghashtab;
 	char *strings;
 	unsigned char *map;
 	size_t map_len;
@@ -80,6 +82,7 @@ static int ldso_fail;
 static jmp_buf rtld_fail;
 static pthread_rwlock_t lock;
 static struct debug debug;
+static size_t *auxv;
 
 struct debug *_dl_debug_addr = &debug;
 
@@ -95,7 +98,15 @@ static void decode_vec(size_t *v, size_t *a, size_t cnt)
 	}
 }
 
-static uint32_t hash(const char *s0)
+static int search_vec(size_t *v, size_t *r, size_t key)
+{
+	for (; v[0]!=key; v+=2)
+		if (!v[0]) return 0;
+	*r = v[1];
+	return 1;
+}
+
+static uint32_t sysv_hash(const char *s0)
 {
 	const unsigned char *s = (void *)s0;
 	uint_fast32_t h = 0;
@@ -106,7 +117,16 @@ static uint32_t hash(const char *s0)
 	return h & 0xfffffff;
 }
 
-static Sym *lookup(const char *s, uint32_t h, struct dso *dso)
+static uint32_t gnu_hash(const char *s0)
+{
+	const unsigned char *s = (void *)s0;
+	uint_fast32_t h = 5381;
+	for (; *s; s++)
+		h = h*33 + *s;
+	return h;
+}
+
+static Sym *sysv_lookup(const char *s, uint32_t h, struct dso *dso)
 {
 	size_t i;
 	Sym *syms = dso->syms;
@@ -119,20 +139,61 @@ static Sym *lookup(const char *s, uint32_t h, struct dso *dso)
 	return 0;
 }
 
+static Sym *gnu_lookup(const char *s, uint32_t h1, struct dso *dso)
+{
+	Sym *sym;
+	char *strings;
+	uint32_t *hashtab = dso->ghashtab;
+	uint32_t nbuckets = hashtab[0];
+	uint32_t *buckets = hashtab + 4 + hashtab[2]*(sizeof(size_t)/4);
+	uint32_t h2;
+	uint32_t *hashval;
+	uint32_t n = buckets[h1 % nbuckets];
+
+	if (!n) return 0;
+
+	strings = dso->strings;
+	sym = dso->syms + n;
+	hashval = buckets + nbuckets + (n - hashtab[1]);
+
+	for (h1 |= 1; ; sym++) {
+		h2 = *hashval++;
+		if ((h1 == (h2|1)) && !strcmp(s, strings + sym->st_name))
+			return sym;
+		if (h2 & 1) break;
+	}
+
+	return 0;
+}
+
 #define OK_TYPES (1<<STT_NOTYPE | 1<<STT_OBJECT | 1<<STT_FUNC | 1<<STT_COMMON)
 #define OK_BINDS (1<<STB_GLOBAL | 1<<STB_WEAK)
 
 static void *find_sym(struct dso *dso, const char *s, int need_def)
 {
-	uint32_t h = hash(s);
+	uint32_t h = 0, gh = 0;
 	void *def = 0;
-	if (h==0x6b366be && !strcmp(s, "dlopen")) rtld_used = 1;
-	if (h==0x6b3afd && !strcmp(s, "dlsym")) rtld_used = 1;
-	if (h==0x595a4cc && !strcmp(s, "__stack_chk_fail")) ssp_used = 1;
+	if (dso->ghashtab) {
+		gh = gnu_hash(s);
+		if (gh == 0xf9040207 && !strcmp(s, "dlopen")) rtld_used = 1;
+		if (gh == 0xf4dc4ae && !strcmp(s, "dlsym")) rtld_used = 1;
+		if (gh == 0x1f4039c9 && !strcmp(s, "__stack_chk_fail")) ssp_used = 1;
+	} else {
+		h = sysv_hash(s);
+		if (h == 0x6b366be && !strcmp(s, "dlopen")) rtld_used = 1;
+		if (h == 0x6b3afd && !strcmp(s, "dlsym")) rtld_used = 1;
+		if (h == 0x595a4cc && !strcmp(s, "__stack_chk_fail")) ssp_used = 1;
+	}
 	for (; dso; dso=dso->next) {
 		Sym *sym;
 		if (!dso->global) continue;
-		sym = lookup(s, h, dso);
+		if (dso->ghashtab) {
+			if (!gh) gh = gnu_hash(s);
+			sym = gnu_lookup(s, gh, dso);
+		} else {
+			if (!h) h = sysv_hash(s);
+			sym = sysv_lookup(s, h, dso);
+		}
 		if (sym && (!need_def || sym->st_shndx) && sym->st_value
 		 && (1<<(sym->st_info&0xf) & OK_TYPES)
 		 && (1<<(sym->st_info>>4) & OK_BINDS)) {
@@ -325,8 +386,11 @@ static void decode_dyn(struct dso *p)
 	size_t dyn[DYN_CNT] = {0};
 	decode_vec(p->dynv, dyn, DYN_CNT);
 	p->syms = (void *)(p->base + dyn[DT_SYMTAB]);
-	p->hashtab = (void *)(p->base + dyn[DT_HASH]);
 	p->strings = (void *)(p->base + dyn[DT_STRTAB]);
+	if (dyn[0]&(1<<DT_HASH))
+		p->hashtab = (void *)(p->base + dyn[DT_HASH]);
+	if (search_vec(p->dynv, dyn, DT_GNU_HASH))
+		p->ghashtab = (void *)(p->base + *dyn);
 }
 
 static struct dso *load_library(const char *name)
@@ -521,6 +585,22 @@ static size_t find_dyn(Phdr *ph, size_t cnt, size_t stride)
 	return 0;
 }
 
+static void find_map_range(Phdr *ph, size_t cnt, size_t stride, struct dso *p)
+{
+	size_t min_addr = -1, max_addr = 0;
+	for (; cnt--; ph = (void *)((char *)ph + stride)) {
+		if (ph->p_type != PT_LOAD) continue;
+		if (ph->p_vaddr < min_addr)
+			min_addr = ph->p_vaddr;
+		if (ph->p_vaddr+ph->p_memsz > max_addr)
+			max_addr = ph->p_vaddr+ph->p_memsz;
+	}
+	min_addr &= -PAGE_SIZE;
+	max_addr = (max_addr + PAGE_SIZE-1) & -PAGE_SIZE;
+	p->map = p->base + min_addr;
+	p->map_len = max_addr - min_addr;
+}
+
 static void do_init_fini(struct dso *p)
 {
 	size_t dyn[DYN_CNT] = {0};
@@ -541,7 +621,7 @@ void _dl_debug_state(void)
 
 void *__dynlink(int argc, char **argv)
 {
-	size_t *auxv, aux[AUX_CNT] = {0};
+	size_t aux[AUX_CNT] = {0};
 	size_t i;
 	Phdr *phdr;
 	Ehdr *ehdr;
@@ -550,6 +630,7 @@ void *__dynlink(int argc, char **argv)
 	struct dso *const lib = builtin_dsos+1;
 	struct dso *const vdso = builtin_dsos+2;
 	char *env_preload=0;
+	size_t vdso_base;
 
 	/* Find aux vector just past environ[] */
 	for (i=argc+1; argv[i]; i++)
@@ -583,6 +664,8 @@ void *__dynlink(int argc, char **argv)
 	lib->name = lib->shortname = "libc.so";
 	lib->global = 1;
 	ehdr = (void *)lib->base;
+	find_map_range((void *)(aux[AT_BASE]+ehdr->e_phoff),
+		ehdr->e_phnum, ehdr->e_phentsize, lib);
 	lib->dynv = (void *)(lib->base + find_dyn(
 		(void *)(aux[AT_BASE]+ehdr->e_phoff),
 		ehdr->e_phnum, ehdr->e_phentsize));
@@ -602,6 +685,8 @@ void *__dynlink(int argc, char **argv)
 		app->name = argv[0];
 		app->dynv = (void *)(app->base + find_dyn(
 			(void *)aux[AT_PHDR], aux[AT_PHNUM], aux[AT_PHENT]));
+		find_map_range((void *)aux[AT_PHDR],
+			aux[AT_PHNUM], aux[AT_PHENT], app);
 	} else {
 		int fd;
 		char *ldname = argv[0];
@@ -638,9 +723,7 @@ void *__dynlink(int argc, char **argv)
 	decode_dyn(app);
 
 	/* Attach to vdso, if provided by the kernel */
-	for (i=0; auxv[i]; i+=2) {
-		size_t vdso_base = auxv[i+1];
-		if (auxv[i] != AT_SYSINFO_EHDR) continue;
+	if (search_vec(auxv, &vdso_base, AT_SYSINFO_EHDR)) {
 		ehdr = (void *)vdso_base;
 		phdr = (void *)(vdso_base + ehdr->e_phoff);
 		for (i=ehdr->e_phnum; i; i--, phdr=(void *)((char *)phdr + ehdr->e_phentsize)) {
@@ -654,7 +737,6 @@ void *__dynlink(int argc, char **argv)
 		decode_dyn(vdso);
 		vdso->prev = lib;
 		lib->next = vdso;
-		break;
 	}
 
 	/* Initial dso chain consists only of the app. We temporarily
@@ -776,6 +858,8 @@ void *dlopen(const char *file, int mode)
 		p->global = 1;
 	}
 
+	if (ssp_used) __init_ssp(auxv);
+
 	_dl_debug_state();
 
 	do_init_fini(tail);
@@ -788,7 +872,7 @@ end:
 static void *do_dlsym(struct dso *p, const char *s, void *ra)
 {
 	size_t i;
-	uint32_t h;
+	uint32_t h = 0, gh = 0;
 	Sym *sym;
 	if (p == RTLD_NEXT) {
 		for (p=head; p && (unsigned char *)ra-p->map>p->map_len; p=p->next);
@@ -802,12 +886,23 @@ static void *do_dlsym(struct dso *p, const char *s, void *ra)
 		if (!res) goto failed;
 		return res;
 	}
-	h = hash(s);
-	sym = lookup(s, h, p);
+	if (p->ghashtab) {
+		gh = gnu_hash(s);
+		sym = gnu_lookup(s, gh, p);
+	} else {
+		h = sysv_hash(s);
+		sym = sysv_lookup(s, h, p);
+	}
 	if (sym && sym->st_value && (1<<(sym->st_info&0xf) & OK_TYPES))
 		return p->base + sym->st_value;
 	if (p->deps) for (i=0; p->deps[i]; i++) {
-		sym = lookup(s, h, p->deps[i]);
+		if (p->deps[i]->ghashtab) {
+			if (!gh) gh = gnu_hash(s);
+			sym = gnu_lookup(s, gh, p->deps[i]);
+		} else {
+			if (!h) h = sysv_hash(s);
+			sym = sysv_lookup(s, h, p->deps[i]);
+		}
 		if (sym && sym->st_value && (1<<(sym->st_info&0xf) & OK_TYPES))
 			return p->deps[i]->base + sym->st_value;
 	}
@@ -815,6 +910,67 @@ failed:
 	errflag = 1;
 	snprintf(errbuf, sizeof errbuf, "Symbol not found: %s", s);
 	return 0;
+}
+
+int __dladdr(void *addr, Dl_info *info)
+{
+	struct dso *p;
+	Sym *sym;
+	uint32_t nsym;
+	char *strings;
+	size_t i;
+	void *best = 0;
+	char *bestname;
+
+	pthread_rwlock_rdlock(&lock);
+	for (p=head; p && (unsigned char *)addr-p->map>p->map_len; p=p->next);
+	pthread_rwlock_unlock(&lock);
+
+	if (!p) return 0;
+
+	sym = p->syms;
+	strings = p->strings;
+	if (p->hashtab) {
+		nsym = p->hashtab[1];
+	} else {
+		uint32_t *buckets;
+		uint32_t *hashval;
+		buckets = p->ghashtab + 4 + (p->ghashtab[2]*sizeof(size_t)/4);
+		sym += p->ghashtab[1];
+		for (i = 0; i < p->ghashtab[0]; i++) {
+			if (buckets[i] > nsym)
+				nsym = buckets[i];
+		}
+		if (nsym) {
+			nsym -= p->ghashtab[1];
+			hashval = buckets + p->ghashtab[0] + nsym;
+			do nsym++;
+			while (!(*hashval++ & 1));
+		}
+	}
+
+	for (; nsym; nsym--, sym++) {
+		if (sym->st_shndx && sym->st_value
+		 && (1<<(sym->st_info&0xf) & OK_TYPES)
+		 && (1<<(sym->st_info>>4) & OK_BINDS)) {
+			void *symaddr = p->base + sym->st_value;
+			if (symaddr > addr || symaddr < best)
+				continue;
+			best = symaddr;
+			bestname = strings + sym->st_name;
+			if (addr == symaddr)
+				break;
+		}
+	}
+
+	if (!best) return 0;
+
+	info->dli_fname = p->name;
+	info->dli_fbase = p->base;
+	info->dli_sname = bestname;
+	info->dli_saddr = best;
+
+	return 1;
 }
 
 void *__dlsym(void *p, const char *s, void *ra)
@@ -831,6 +987,10 @@ void *dlopen(const char *file, int mode)
 	return 0;
 }
 void *__dlsym(void *p, const char *s, void *ra)
+{
+	return 0;
+}
+int __dladdr (void *addr, Dl_info *info)
 {
 	return 0;
 }
