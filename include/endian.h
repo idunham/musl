@@ -1,7 +1,7 @@
 #ifndef _ENDIAN_H
 #define _ENDIAN_H
 
-#if (__STDC_VERSION__ >= 199901L)
+#if __STDC_VERSION__ >= 199901L || defined(__cplusplus)
 #define __inline inline
 #endif
 
