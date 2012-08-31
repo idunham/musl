@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include "libc.h"
 
 char *strndup(const char *s, size_t n)
 {
@@ -10,3 +11,5 @@ char *strndup(const char *s, size_t n)
 	d[l] = 0;
 	return d;
 }
+
+weak_alias(strndup, __strndup);

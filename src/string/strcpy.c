@@ -1,4 +1,5 @@
 #include <string.h>
+#include "libc.h"
 
 char *__stpcpy(char *, const char *);
 
@@ -14,3 +15,7 @@ char *strcpy(char *dest, const char *src)
 	return dest;
 #endif
 }
+
+/* NOTE: __strcpy_chk actually takes a third argument, which we ignore; it is a
+ * matter of ABI whether this alias is therefore safe or not */
+weak_alias(strcpy, __strcpy_chk);

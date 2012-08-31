@@ -1,4 +1,5 @@
 #include <string.h>
+#include "libc.h"
 
 char *strtok_r(char *s, const char *sep, char **p)
 {
@@ -10,3 +11,5 @@ char *strtok_r(char *s, const char *sep, char **p)
 	else *p = 0;
 	return s;
 }
+
+weak_alias(strtok_r, __strtok_r);

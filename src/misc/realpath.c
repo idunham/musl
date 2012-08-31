@@ -5,6 +5,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <unistd.h>
+#include "libc.h"
 
 char *realpath(const char *filename, char *resolved)
 {
@@ -47,3 +48,7 @@ err:
 	close(fd);
 	return 0;
 }
+
+/* NOTE: __realpath_chk actually takes a third argument, which we ignore; it is
+ * a matter of ABI whether this alias is therefore safe or not */
+weak_alias(realpath, __realpath_chk);

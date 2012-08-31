@@ -27,6 +27,10 @@ void *memset (void *, int, size_t);
 int memcmp (const void *, const void *, size_t);
 void *memchr (const void *, int, size_t);
 
+#if defined(_GNU_SOURCE)
+void *rawmemchr (const void *, int);
+#endif
+
 char *strcpy (char *, const char *);
 char *strncpy (char *, const char *, size_t);
 

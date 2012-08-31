@@ -1,6 +1,8 @@
 .global memcpy
+.global __memcpy_chk
 .type memcpy,@function
 memcpy:
+__memcpy_chk:
 	mov %rdi,%rax
 	cmp $8,%rdx
 	jc 1f

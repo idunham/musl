@@ -1,6 +1,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include "libc.h"
 
 #define SS (sizeof(size_t))
 #define ALIGN (sizeof(size_t)-1)
@@ -27,3 +28,7 @@ misaligned:
 	}
 	return dest;
 }
+
+/* NOTE: __memcpy_chk actually takes a fourth argument, which we ignore; it is
+ * a matter of ABI whether this alias is therefore safe or not */
+weak_alias(memcpy, __memcpy_chk);

@@ -1,6 +1,7 @@
 #include "stdio_impl.h"
 #include "intscan.h"
 #include "shgetc.h"
+#include "libc.h"
 
 static unsigned long long strtox(const char *s, char **p, int base, unsigned long long lim)
 {
@@ -51,3 +52,6 @@ uintmax_t strtoumax(const char *s, char **p, int base)
 {
 	return strtoull(s, p, base);
 }
+
+weak_alias(strtol, __strtol_internal);
+weak_alias(strtoul, __strtoul_internal);
