@@ -6,7 +6,7 @@
  * getifaddrs should return a TAILQ-type linked list of these structs:
  * (copied verbatim from man 3 getifaddrs)
  */ 
-/*
+
 struct ifaddrs {
 	struct ifaddrs	*ifa_next;
 	char		*ifa_name;
@@ -21,13 +21,13 @@ struct ifaddrs {
 	#define	ifa_dstaddr   ifa_ifu.ifu_dstaddr
 	void		*ifa_data;
 };
-*/
-int getifaddrs (*ifp)
+
+int getifaddrs (struct ifaddrs **ifp)
 {
 	errno = EACCES;
 	return -1;
 }
 
-void freeifaddrs (*ifa)
+void freeifaddrs (struct ifaddrs *ifa)
 {
 }
