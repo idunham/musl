@@ -15,7 +15,7 @@ static char *getword(FILE *f)
 	return getdelim(&s, (size_t [1]){0}, 0, f) < 0 ? 0 : s;
 }
 
-static int do_wordexp(const char *s, wordexp_t *we, int flags)
+static int do_wordexp(const char * restrict s, wordexp_t * restrict we, int flags)
 {
 	size_t i, l;
 	int sq=0, dq=0;
@@ -147,7 +147,7 @@ static int do_wordexp(const char *s, wordexp_t *we, int flags)
 	return err;
 }
 
-int wordexp(const char *s, wordexp_t *we, int flags)
+int wordexp(const char * restrict s, wordexp_t * restrict we, int flags)
 {
 	int r, cs;
 	pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &cs);
