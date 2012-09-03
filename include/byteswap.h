@@ -5,6 +5,8 @@
 
 #if (__STDC_VERSION__ >= 199901L)
 #define __inline inline
+#elif (__STDC_VERSION__ < 199901L) && !defined(__GNUC__)
+#define inline
 #endif
 
 __inline static uint16_t __bswap_16(uint16_t __x)
