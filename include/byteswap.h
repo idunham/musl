@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#if __STDC_VERSION__ >= 199901L || defined(__cplusplus)
+#if (__STDC_VERSION__ >= 199901L)
 #define __inline inline
 #endif
 
