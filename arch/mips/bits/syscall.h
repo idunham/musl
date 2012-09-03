@@ -1,9 +1,3 @@
-#if (__STDC_VERSION__ >= 199901L)
-#define __inline inline
-#elif (__STDC_VERSION__ < 199901L) && !defined(__GNUC__)
-#define inline
-#endif
-
 #define __SYSCALL_LL_E(x) \
 ((union { long long ll; long l[2]; }){ .ll = x }).l[0], \
 ((union { long long ll; long l[2]; }){ .ll = x }).l[1]
