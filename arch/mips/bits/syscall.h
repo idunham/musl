@@ -1,5 +1,7 @@
 #if (__STDC_VERSION__ >= 199901L)
 #define __inline inline
+#elif (__STDC_VERSION__ < 199901L) && !defined(__GNUC__)
+#define inline
 #endif
 
 #define __SYSCALL_LL_E(x) \
