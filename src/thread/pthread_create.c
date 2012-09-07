@@ -8,7 +8,7 @@ weak_alias(dummy_0, __synccall_lock);
 weak_alias(dummy_0, __synccall_unlock);
 weak_alias(dummy_0, __pthread_tsd_run_dtors);
 
-void pthread_exit(void *result)
+_Noreturn void pthread_exit(void *result)
 {
 	pthread_t self = pthread_self();
 	int n;
@@ -43,7 +43,7 @@ void pthread_exit(void *result)
 		__unmapself(self->map_base, self->map_size);
 	}
 
-	__syscall(SYS_exit, 0);
+	for (;;) __syscall(SYS_exit, 0);
 }
 
 void __do_cleanup_push(struct __ptcb *cb)
@@ -84,7 +84,7 @@ static void init_file_lock(FILE *f)
 	if (f && f->lock<0) f->lock = 0;
 }
 
-int pthread_create(pthread_t *res, const pthread_attr_t *attr, void *(*entry)(void *), void *arg)
+int pthread_create(pthread_t *restrict res, const pthread_attr_t *restrict attr, void *(*entry)(void *), void *restrict arg)
 {
 	int ret;
 	size_t size = DEFAULT_STACK_SIZE + DEFAULT_GUARD_SIZE;
