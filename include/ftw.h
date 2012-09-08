@@ -5,9 +5,7 @@
 extern "C" {
 #endif
 
-/* Normally we do not nest header includes. However useless bloat
- * like ftw may be treated as a special case. Otherwise we would
- * have to deal with duplicating all the stat.h mess. */
+#include <features.h>
 #include <sys/stat.h>
 
 #define FTW_F   1
