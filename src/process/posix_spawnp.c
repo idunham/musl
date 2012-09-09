@@ -4,7 +4,7 @@
 int __posix_spawnx(pid_t * restrict, const char * restrict,
 	int (*)(const char *, char *const *),
 	const posix_spawn_file_actions_t *,
-	const posix_spawnattr_t * restrict, char *const *restrict, char *const *restrict);
+	const posix_spawnattr_t * restrict, char *const [restrict], char *const [restrict]);
 
 int posix_spawnp(pid_t * restrict res, const char * restrict file,
 	const posix_spawn_file_actions_t *fa,
