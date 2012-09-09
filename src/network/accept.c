@@ -2,7 +2,7 @@
 #include "syscall.h"
 #include "libc.h"
 
-int accept(int fd, struct sockaddr * restrict addr, socklen_t * restrict len)
+int accept(int fd, struct sockaddr *addr, socklen_t *len)
 {
 	return socketcall_cp(accept, fd, addr, len, 0, 0, 0);
 }

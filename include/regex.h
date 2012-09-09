@@ -5,12 +5,6 @@
 extern "C" {
 #endif
 
-#if __STDC_VERSION__ >= 199901L
-#define __restrict restrict
-#elif !defined(__GNUC__)
-#define __restrict
-#endif
-
 #define __NEED_size_t
 
 #include <bits/alltypes.h>
@@ -53,11 +47,11 @@ typedef struct {
 
 #define REG_ENOSYS      -1
 
-int regcomp(regex_t * __restrict, const char * __restrict, int);
-int regexec(const regex_t * __restrict, const char * __restrict, size_t, regmatch_t [__restrict], int);
+int regcomp(regex_t *, const char *, int);
+int regexec(const regex_t *, const char *, size_t, regmatch_t [], int);
 void regfree(regex_t *);
 
-size_t regerror(int, const regex_t * __restrict, char * __restrict, size_t);
+size_t regerror(int, const regex_t *, char *, size_t);
 
 #ifdef __cplusplus
 }

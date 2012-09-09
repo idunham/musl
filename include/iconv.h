@@ -5,12 +5,6 @@
 extern "C" {
 #endif
 
-#if __STDC_VERSION__ >= 199901L
-#define __restrict restrict
-#elif !defined(__GNUC__)
-#define __restrict
-#endif
-
 #define __NEED_size_t
 
 #include <bits/alltypes.h>
@@ -18,7 +12,7 @@ extern "C" {
 typedef void *iconv_t;
 
 iconv_t iconv_open(const char *, const char *);
-size_t iconv(iconv_t, char ** __restrict, size_t * __restrict, char ** __restrict, size_t * __restrict);
+size_t iconv(iconv_t, char **, size_t *, char **, size_t *);
 int iconv_close(iconv_t);
 
 #ifdef __cplusplus

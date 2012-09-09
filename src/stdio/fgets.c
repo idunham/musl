@@ -2,7 +2,7 @@
 
 #define MIN(a,b) ((a)<(b) ? (a) : (b))
 
-char *fgets(char * restrict s, int n, FILE * restrict f)
+char *fgets(char *s, int n, FILE *f)
 {
 	char *p = s;
 	unsigned char *z;

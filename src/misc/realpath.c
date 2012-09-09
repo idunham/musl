@@ -7,7 +7,7 @@
 #include <unistd.h>
 #include "libc.h"
 
-char *realpath(const char * restrict filename, char * restrict resolved)
+char *realpath(const char *filename, char *resolved)
 {
 	int fd;
 	ssize_t r;

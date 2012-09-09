@@ -427,7 +427,7 @@ static int getint(char **s) {
 	return i;
 }
 
-static int printf_core(FILE * restrict f, const char * restrict fmt, va_list *ap, union arg *nl_arg, int *nl_type)
+static int printf_core(FILE *f, const char *fmt, va_list *ap, union arg *nl_arg, int *nl_type)
 {
 	char *a, *z, *s=(char *)fmt;
 	unsigned l10n=0, fl;
@@ -636,7 +636,7 @@ static int printf_core(FILE * restrict f, const char * restrict fmt, va_list *ap
 	return 1;
 }
 
-int vfprintf(FILE * restrict f, const char * restrict fmt, va_list ap)
+int vfprintf(FILE *f, const char *fmt, va_list ap)
 {
 	va_list ap2;
 	int nl_type[NL_ARGMAX+1] = {0};

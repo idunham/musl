@@ -5,12 +5,6 @@
 extern "C" {
 #endif
 
-#if __STDC_VERSION__ >= 199901L
-#define __restrict restrict
-#elif !defined(__GNUC__)
-#define __restrict
-#endif
-
 #undef NULL
 #ifdef __cplusplus
 #define NULL 0
@@ -28,14 +22,14 @@ long atol (const char *);
 long long atoll (const char *);
 double atof (const char *);
 
-float strtof (const char * __restrict, char ** __restrict);
-double strtod (const char * __restrict, char ** __restrict);
-long double strtold (const char * __restrict, char ** __restrict);
+float strtof (const char *, char **);
+double strtod (const char *, char **);
+long double strtold (const char *, char **);
 
-long strtol (const char * __restrict, char ** __restrict, int);
-unsigned long strtoul (const char * __restrict, char ** __restrict, int);
-long long strtoll (const char * __restrict, char ** __restrict, int);
-unsigned long long strtoull (const char * __restrict, char ** __restrict, int);
+long strtol (const char *, char **, int);
+unsigned long strtoul (const char *, char **, int);
+long long strtoll (const char *, char **, int);
+unsigned long long strtoull (const char *, char **, int);
 
 int rand (void);
 void srand (unsigned);
@@ -73,10 +67,10 @@ ldiv_t ldiv (long, long);
 lldiv_t lldiv (long long, long long);
 
 int mblen (const char *, size_t);
-int mbtowc (wchar_t * __restrict, const char * __restrict, size_t);
+int mbtowc (wchar_t *, const char *, size_t);
 int wctomb (char *, wchar_t);
-size_t mbstowcs (wchar_t * __restrict, const char * __restrict, size_t);
-size_t wcstombs (char * __restrict, const wchar_t * __restrict, size_t);
+size_t mbstowcs (wchar_t *, const char *, size_t);
+size_t wcstombs (char *, const wchar_t *, size_t);
 
 #define EXIT_FAILURE 1
 #define EXIT_SUCCESS 0
@@ -114,7 +108,7 @@ int rand_r (unsigned *);
 
 #if defined(_XOPEN_SOURCE) || defined(_GNU_SOURCE) \
  || defined(_BSD_SOURCE)
-char *realpath (const char * __restrict, char * __restrict);
+char *realpath (const char *, char *);
 long int random (void);
 void srandom (unsigned int);
 char *initstate (unsigned int, char *, size_t);

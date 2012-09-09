@@ -6,7 +6,7 @@
 #define MAX(a,b) ((a)>(b)?(a):(b))
 #define MIN(a,b) ((a)<(b)?(a):(b))
 
-static wchar_t *twoway_wcsstr(const wchar_t * restrict h, const wchar_t * restrict n)
+static wchar_t *twoway_wcsstr(const wchar_t *h, const wchar_t *n)
 {
 	const wchar_t *z;
 	size_t l, ip, jp, k, p, ms, p0, mem, mem0;
@@ -93,7 +93,7 @@ static wchar_t *twoway_wcsstr(const wchar_t * restrict h, const wchar_t * restri
 	}
 }
 
-wchar_t *wcsstr(const wchar_t * restrict h, const wchar_t * restrict n)
+wchar_t *wcsstr(const wchar_t *h, const wchar_t *n)
 {
 	/* Return immediately on empty needle or haystack */
 	if (!n[0]) return (wchar_t *)h;

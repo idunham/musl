@@ -1,8 +1,8 @@
 #include <dlfcn.h>
 
-void *__dlsym(void * restrict , const char * restrict , void * restrict );
+void *__dlsym(void *, const char *, void *);
 
-void *dlsym(void * restrict p, const char * restrict s)
+void *dlsym(void *p, const char *s)
 {
 	return __dlsym(p, s, 0);
 }

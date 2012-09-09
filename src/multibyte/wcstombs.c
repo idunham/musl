@@ -11,8 +11,7 @@
 
 #include "internal.h"
 
-size_t wcstombs(char * restrict s, const wchar_t * restrict ws, size_t n)
+size_t wcstombs(char *s, const wchar_t *ws, size_t n)
 {
-	const wchar_t * x = ws;
-	return wcsrtombs(s, &x, n, 0);
+	return wcsrtombs(s, &ws, n, 0);
 }

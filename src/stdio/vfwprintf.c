@@ -158,7 +158,7 @@ static const char sizeprefix['y'-'a'] = {
 ['p'-'a']='j'
 };
 
-static int wprintf_core(FILE * restrict f, const wchar_t * restrict fmt, va_list *ap, union arg *nl_arg, int *nl_type)
+static int wprintf_core(FILE *f, const wchar_t *fmt, va_list *ap, union arg *nl_arg, int *nl_type)
 {
 	wchar_t *a, *z, *s=(wchar_t *)fmt, *s0;
 	unsigned l10n=0, litpct, fl;
@@ -336,7 +336,7 @@ static int wprintf_core(FILE * restrict f, const wchar_t * restrict fmt, va_list
 	return 1;
 }
 
-int vfwprintf(FILE * restrict f, const wchar_t * restrict fmt, va_list ap)
+int vfwprintf(FILE *f, const wchar_t *fmt, va_list ap)
 {
 	va_list ap2;
 	int nl_type[NL_ARGMAX] = {0};

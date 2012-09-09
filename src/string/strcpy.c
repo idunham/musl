@@ -3,7 +3,7 @@
 
 char *__stpcpy(char *, const char *);
 
-char *strcpy(char * restrict dest, const char * restrict src)
+char *strcpy(char *dest, const char *src)
 {
 #if 1
 	__stpcpy(dest, src);

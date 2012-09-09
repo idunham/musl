@@ -5,12 +5,6 @@
 extern "C" {
 #endif
 
-#if __STDC_VERSION__ >= 199901L
-#define __restrict restrict
-#elif !defined(__GNUC__)
-#define __restrict
-#endif
-
 #define __NEED_size_t
 
 #include <bits/alltypes.h>
@@ -36,7 +30,7 @@ typedef struct
 #define WRDE_CMDSUB  4
 #define WRDE_SYNTAX  5
 
-int wordexp (const char * __restrict, wordexp_t * __restrict, int);
+int wordexp (const char *, wordexp_t *, int);
 void wordfree (wordexp_t *);
 
 #ifdef __cplusplus

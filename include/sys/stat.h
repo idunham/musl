@@ -4,12 +4,6 @@
 extern "C" {
 #endif
 
-#if __STDC_VERSION__ >= 199901L
-#define __restrict restrict
-#elif !defined(__GNUC__)
-#define __restrict
-#endif
-
 #define __NEED_dev_t
 #define __NEED_ino_t
 #define __NEED_mode_t
@@ -74,10 +68,10 @@ extern "C" {
 #define UTIME_NOW  0x3fffffff
 #define UTIME_OMIT 0x3ffffffe
 
-int stat(const char * __restrict, struct stat * __restrict);
+int stat(const char *, struct stat *);
 int fstat(int, struct stat *);
-int lstat(const char * __restrict, struct stat * __restrict);
-int fstatat(int, const char * __restrict, struct stat * __restrict, int);
+int lstat(const char *, struct stat *);
+int fstatat(int, const char *, struct stat *, int);
 int chmod(const char *, mode_t);
 int fchmod(int, mode_t);
 int fchmodat(int, const char *, mode_t, int);

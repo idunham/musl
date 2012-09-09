@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-int snprintf(char * restrict s, size_t n, const char * restrict fmt, ...)
+int snprintf(char *s, size_t n, const char *fmt, ...)
 {
 	int ret;
 	va_list ap;
