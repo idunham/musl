@@ -5,6 +5,8 @@
 extern "C" {
 #endif
 
+#include <features.h>
+
 #define STDIN_FILENO  0
 #define STDOUT_FILENO 1
 #define STDERR_FILENO 2
@@ -52,8 +54,8 @@ int link(const char *, const char *);
 int linkat(int, const char *, int, const char *, int);
 int symlink(const char *, const char *);
 int symlinkat(const char *, int, const char *);
-ssize_t readlink(const char *, char *, size_t);
-ssize_t readlinkat(int, const char *, char *, size_t);
+ssize_t readlink(const char *__restrict, char *__restrict, size_t);
+ssize_t readlinkat(int, const char *__restrict, char *__restrict, size_t);
 int unlink(const char *);
 int unlinkat(int, const char *, int);
 int rmdir(const char *);
@@ -84,7 +86,7 @@ int execl(const char *, const char *, ...);
 int execvp(const char *, char *const []);
 int execlp(const char *, const char *, ...);
 int fexecve(int, char *const [], char *const []);
-void _exit(int);
+_Noreturn void _exit(int);
 
 pid_t getpid(void);
 pid_t getppid(void);
@@ -141,7 +143,7 @@ void sync(void);
 pid_t setpgrp(void);
 char *crypt(const char *, const char *);
 void encrypt(char *, int);
-void swab(const void *, void *, ssize_t);
+void swab(const void *__restrict, void *__restrict, ssize_t);
 #endif
 
 #if defined(_GNU_SOURCE) || defined(_BSD_SOURCE) \

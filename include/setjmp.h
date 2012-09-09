@@ -5,6 +5,8 @@
 extern "C" {
 #endif
 
+#include <features.h>
+
 #include <bits/setjmp.h>
 
 
@@ -17,19 +19,19 @@ typedef struct {
 	unsigned long __ss[128/sizeof(long)];
 } sigjmp_buf[1];
 int sigsetjmp (sigjmp_buf, int);
-void siglongjmp (sigjmp_buf, int);
+_Noreturn void siglongjmp (sigjmp_buf, int);
 #endif
 
 
 #if defined(_XOPEN_SOURCE) || defined(_GNU_SOURCE) \
  || defined(_BSD_SOURCE)
 int _setjmp (jmp_buf);
-void _longjmp (jmp_buf, int);
+_Noreturn void _longjmp (jmp_buf, int);
 #endif
 
 
 int setjmp (jmp_buf);
-void longjmp (jmp_buf, int);
+_Noreturn void longjmp (jmp_buf, int);
 
 #define setjmp setjmp
 #define longjmp longjmp

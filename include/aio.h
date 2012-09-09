@@ -5,6 +5,7 @@
 extern "C" {
 #endif
 
+#include <features.h>
 #include <signal.h>
 #include <time.h>
 
@@ -46,7 +47,7 @@ int aio_cancel(int, struct aiocb *);
 int aio_suspend(const struct aiocb *const [], int, const struct timespec *);
 int aio_fsync(int, struct aiocb *);
 
-int lio_listio(int, struct aiocb *const [], int, struct sigevent *);
+int lio_listio(int, struct aiocb *__restrict const *__restrict, int, struct sigevent *__restrict);
 
 #if defined(_LARGEFILE64_SOURCE) || defined(_GNU_SOURCE)
 #define aiocb64 aiocb
