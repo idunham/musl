@@ -4,11 +4,7 @@
 extern "C" {
 #endif
 
-#if __STDC_VERSION__ >= 199901L
-#define __restrict restrict
-#elif !defined(__GNUC__)
-#define __restrict
-#endif
+#include <features.h>
 
 #define __NEED_socklen_t
 #define __NEED_sa_family_t
@@ -258,6 +254,10 @@ int sockatmark (int);
 #define SHUT_RD 0
 #define SHUT_WR 1
 #define SHUT_RDWR 2
+
+#ifdef _GNU_SOURCE
+int accept4(int, struct sockaddr *__restrict, socklen_t *__restrict, int);
+#endif
 
 #ifdef __cplusplus
 }

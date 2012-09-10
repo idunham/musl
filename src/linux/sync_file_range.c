@@ -1,5 +1,6 @@
 #define _GNU_SOURCE
 #include <fcntl.h>
+#include <errno.h>
 #include "syscall.h"
 
 int sync_file_range(int fd, off_t pos, off_t len, unsigned flags)
