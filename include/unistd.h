@@ -165,12 +165,14 @@ int getpagesize(void);
 int getdtablesize(void);
 int sethostname(const char *, size_t);
 int getdomainname(char *, size_t);
+int setdomainname(const char *, size_t);
 int setgroups(size_t, const gid_t []);
 char *getpass(const char *);
 int daemon(int, int);
 void setusershell(void);
 void endusershell(void);
 char *getusershell(void);
+int acct(const char *);
 #endif
 
 #ifdef _GNU_SOURCE
@@ -181,6 +183,7 @@ int getresuid(uid_t *, uid_t *, uid_t *);
 int getresgid(gid_t *, gid_t *, gid_t *);
 char *get_current_dir_name(void);
 int pipe2(int [2], int);
+int dup3(int, int, int);
 #endif
 
 #if defined(_LARGEFILE64_SOURCE) || defined(_GNU_SOURCE)

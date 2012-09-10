@@ -71,6 +71,7 @@ uint32_t ntohl(uint32_t);
 uint16_t ntohs(uint16_t);
 
 #define IPPROTO_IP       0
+#define IPPROTO_HOPOPTS  0
 #define IPPROTO_ICMP     1
 #define IPPROTO_IGMP     2
 #define IPPROTO_IPIP     4
@@ -95,6 +96,7 @@ uint16_t ntohs(uint16_t);
 #define IPPROTO_PIM      103
 #define IPPROTO_COMP     108
 #define IPPROTO_RAW      255
+#define IPPROTO_MAX      256
 
 #define IN6_IS_ADDR_UNSPECIFIED(a) \
         (((uint32_t *) (a))[0] == 0 && ((uint32_t *) (a))[1] == 0 && \
