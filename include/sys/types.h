@@ -72,6 +72,7 @@ typedef long register_t;
 #include <endian.h>
 #include <sys/select.h>
 #include <sys/sysmacros.h>
+#define NFDBITS (8 * sizeof(long))
 #endif
 
 #if defined(_LARGEFILE64_SOURCE) || defined(_GNU_SOURCE)
