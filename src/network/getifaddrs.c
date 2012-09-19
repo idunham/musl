@@ -27,7 +27,6 @@
  * try-and-error for region size.
  */
 
-/* #include <sys/cdefs.h> */
 #define _BSD_SOURCE
 #include <sys/types.h>
 #include <sys/types.h>
