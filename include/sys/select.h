@@ -32,6 +32,10 @@ typedef struct
 int select (int, fd_set *__restrict, fd_set *__restrict, fd_set *__restrict, struct timeval *__restrict);
 int pselect (int, fd_set *__restrict, fd_set *__restrict, fd_set *__restrict, const struct timespec *__restrict, const sigset_t *__restrict);
 
+#if defined(_BSD_SOURCE) || defined(_GNU_SOURCE)
+#define NFDBITS (8 * sizeof(long))
+#endif
+
 
 #ifdef __cplusplus
 }
