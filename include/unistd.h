@@ -33,11 +33,9 @@ extern "C" {
 #include <bits/alltypes.h>
 
 int pipe(int [2]);
-int pipe2(int [2], int);
 int close(int);
 int dup(int);
 int dup2(int, int);
-int dup3(int, int, int);
 off_t lseek(int, off_t, int);
 int fsync(int);
 int fdatasync(int);
@@ -184,6 +182,8 @@ int setresgid(gid_t, gid_t, gid_t);
 int getresuid(uid_t *, uid_t *, uid_t *);
 int getresgid(gid_t *, gid_t *, gid_t *);
 char *get_current_dir_name(void);
+int pipe2(int [2], int);
+int dup3(int, int, int);
 void syncfs(int);
 #endif
 
