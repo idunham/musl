@@ -1,5 +1,6 @@
 #include <unistd.h>
 #include "syscall.h"
+#include "libc.h"
 
 int access(const char *filename, int amode)
 {
