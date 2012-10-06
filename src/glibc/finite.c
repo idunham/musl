@@ -1,7 +1,7 @@
 #include <math.h>
 #include "libc.h"
 
-int finite(x){
+int finite(double x){
 	return isfinite(x);
 }
 weak_alias(finite,finitel);
