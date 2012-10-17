@@ -34,36 +34,36 @@ extern "C" {
 int iopl(int);
 int ioperm(unsigned long, unsigned long, int);
 
-static inline void outb(unsigned char __v, unsigned short __p)
+static __inline void outb(unsigned char __v, unsigned short __p)
 {
 	__asm__ volatile ("outb %0,%1" : : "a" (__v), "dN" (__p));
 }
 
-static inline void outw(unsigned short __v, unsigned short __p)
+static __inline void outw(unsigned short __v, unsigned short __p)
 {
 	__asm__ volatile ("outw %0,%1" : : "a" (__v), "dN" (__p));
 }
 
-static inline void outl(unsigned int __v, unsigned short __p)
+static __inline void outl(unsigned int __v, unsigned short __p)
 {
 	__asm__ volatile ("outl %0,%1" : : "a" (__v), "dN" (__p));
 }
 
-static inline unsigned char inb(unsigned short __p)
+static __inline unsigned char inb(unsigned short __p)
 {
 	unsigned char __v;
 	__asm__ volatile ("inb %1,%0" : "=a" (__v) : "dN" (__p));
 	return __v;
 }
 
-static inline unsigned short inw(unsigned short __p)
+static __inline unsigned short inw(unsigned short __p)
 {
 	unsigned short __v;
 	__asm__ volatile ("inw %1,%0" : "=a" (__v) : "dN" (__p));
 	return __v;
 }
 
-static inline unsigned int inl(unsigned short __p)
+static __inline unsigned int inl(unsigned short __p)
 {
 	unsigned int __v;
 	__asm__ volatile ("inl %1,%0" : "=a" (__v) : "dN" (__p));
@@ -72,45 +72,42 @@ static inline unsigned int inl(unsigned short __p)
 
 /* String I/O macros */
 
-static inline void
-outsb(unsigned short __p, const void *__d, unsigned long __n)
+static __inline void outsb(unsigned short __p, const void *__d, unsigned long __n)
 {
 	__asm__ volatile ("cld; rep; outsb"
 		      : "+S" (__d), "+c" (__n)
 		      : "d" (__p));
 }
 
-static inline void
-outsw(unsigned short __p, const void *__d, unsigned long __n)
+static __inline void outsw(unsigned short __p, const void *__d, unsigned long __n)
 {
 	__asm__ volatile ("cld; rep; outsw"
 		      : "+S" (__d), "+c" (__n)
 		      : "d" (__p));
 }
 
-static inline void
-outsl(unsigned short __p, const void *__d, unsigned long __n)
+static __inline voidoutsl(unsigned short __p, const void *__d, unsigned long __n)
 {
 	__asm__ volatile ("cld; rep; outsl"
 		      : "+S" (__d), "+c"(__n)
 		      : "d" (__p));
 }
 
-static inline void insb(unsigned short __p, void *__d, unsigned long __n)
+static __inline void insb(unsigned short __p, void *__d, unsigned long __n)
 {
 	__asm__ volatile ("cld; rep; insb"
 		      : "+D" (__d), "+c" (__n)
 		      : "d" (__p));
 }
 
-static inline void insw(unsigned short __p, void *__d, unsigned long __n)
+static __inline void insw(unsigned short __p, void *__d, unsigned long __n)
 {
 	__asm__ volatile ("cld; rep; insw"
 		      : "+D" (__d), "+c" (__n)
 		      : "d" (__p));
 }
 
-static inline void insl(unsigned short __p, void *__d, unsigned long __n)
+static __inline void insl(unsigned short __p, void *__d, unsigned long __n)
 {
 	__asm__ volatile ("cld; rep; insl"
 		      : "+D" (__d), "+c" (__n)
