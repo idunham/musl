@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <fcntl.h>
 #include "syscall.h"
+#include "pthread_impl.h"
 #include "fdop.h"
 #include "libc.h"
 
@@ -18,7 +19,7 @@ weak_alias(dummy_0, __release_ptc);
 pid_t __vfork(void);
 
 int __posix_spawnx(pid_t *restrict res, const char *restrict path,
-	int (*exec)(const char *, char *const *),
+	int (*exec)(const char *, char *const *, char *const *),
 	const posix_spawn_file_actions_t *fa,
 	const posix_spawnattr_t *restrict attr,
 	char *const argv[restrict], char *const envp[restrict])
@@ -30,7 +31,7 @@ int __posix_spawnx(pid_t *restrict res, const char *restrict path,
 
 	if (!attr) attr = &dummy_attr;
 
-	sigprocmask(SIG_BLOCK, (void *)(uint64_t []){-1}, &oldmask);
+	sigprocmask(SIG_BLOCK, SIGALL_SET, &oldmask);
 
 	__acquire_ptc();
 	pid = __vfork();
@@ -43,14 +44,14 @@ int __posix_spawnx(pid_t *restrict res, const char *restrict path,
 		return 0;
 	}
 
-	for (i=1; i<=64; i++) {
+	for (i=1; i<=8*__SYSCALL_SSLEN; i++) {
 		struct sigaction sa;
-		sigaction(i, 0, &sa);
-		if (sa.sa_handler!=SIG_IGN ||
+		__libc_sigaction(i, 0, &sa);
+		if (sa.sa_handler!=SIG_DFL && (sa.sa_handler!=SIG_IGN ||
 		    ((attr->__flags & POSIX_SPAWN_SETSIGDEF)
-		     && sigismember(&attr->__def, i) )) {
+		     && sigismember(&attr->__def, i) ))) {
 			sa.sa_handler = SIG_DFL;
-			sigaction(i, &sa, 0);
+			__libc_sigaction(i, &sa, 0);
 		}
 	}
 
@@ -94,8 +95,7 @@ int __posix_spawnx(pid_t *restrict res, const char *restrict path,
 	sigprocmask(SIG_SETMASK, (attr->__flags & POSIX_SPAWN_SETSIGMASK)
 		? &attr->__mask : &oldmask, 0);
 
-	if (envp) environ = (char **)envp;
-	exec(path, argv);
+	exec(path, argv, envp ? envp : environ);
 	_exit(127);
 
 	return 0;
@@ -106,5 +106,5 @@ int posix_spawn(pid_t *restrict res, const char *restrict path,
 	const posix_spawnattr_t *restrict attr,
 	char *const argv[restrict], char *const envp[restrict])
 {
-	return __posix_spawnx(res, path, execv, fa, attr, argv, envp);
+	return __posix_spawnx(res, path, execve, fa, attr, argv, envp);
 }
