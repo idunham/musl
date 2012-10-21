@@ -1080,12 +1080,17 @@ static void *do_dlsym(struct dso *p, const char *s, void *ra)
 	uint32_t h = 0, gh = 0;
 	Sym *sym;
 	if (p == head || p == RTLD_DEFAULT || p == RTLD_NEXT) {
-		if (p == RTLD_NEXT) {
+		if (p == RTLD_DEFAULT) {
+			p = head;
+		} else if (p == RTLD_NEXT) {
 			for (p=head; p && (unsigned char *)ra-p->map>p->map_len; p=p->next);
 			if (!p) p=head;
+			p = p->next;
 		}
-		struct symdef def = find_sym(p->next, s, 0);
+		struct symdef def = find_sym(p, s, 0);
 		if (!def.sym) goto failed;
+		if ((def.sym->st_info&0xf) == STT_TLS)
+			return __tls_get_addr((size_t []){def.dso->tls_id, def.sym->st_value});
 		return def.dso->base + def.sym->st_value;
 	}
 	if (p->ghashtab) {
@@ -1095,6 +1100,8 @@ static void *do_dlsym(struct dso *p, const char *s, void *ra)
 		h = sysv_hash(s);
 		sym = sysv_lookup(s, h, p);
 	}
+	if (sym && (sym->st_info&0xf) == STT_TLS)
+		return __tls_get_addr((size_t []){p->tls_id, sym->st_value});
 	if (sym && sym->st_value && (1<<(sym->st_info&0xf) & OK_TYPES))
 		return p->base + sym->st_value;
 	if (p->deps) for (i=0; p->deps[i]; i++) {
@@ -1105,6 +1112,8 @@ static void *do_dlsym(struct dso *p, const char *s, void *ra)
 			if (!h) h = sysv_hash(s);
 			sym = sysv_lookup(s, h, p->deps[i]);
 		}
+		if (sym && (sym->st_info&0xf) == STT_TLS)
+			return __tls_get_addr((size_t []){p->deps[i]->tls_id, sym->st_value});
 		if (sym && sym->st_value && (1<<(sym->st_info&0xf) & OK_TYPES))
 			return p->deps[i]->base + sym->st_value;
 	}
