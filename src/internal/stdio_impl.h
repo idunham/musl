@@ -2,28 +2,12 @@
 #define _STDIO_IMPL_H
 
 #include <stdio.h>
-#include <stdlib.h>
-#include <stddef.h>
-#include <stdarg.h>
-#include <string.h>
-#include <inttypes.h>
-#include <wchar.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <limits.h>
-#include <errno.h>
-#include <termios.h>
-#include <sys/ioctl.h>
-#include <ctype.h>
-#include <sys/wait.h>
-#include <math.h>
-#include <float.h>
-#include <sys/uio.h>
 #include "syscall.h"
 #include "libc.h"
 
 #define UNGET 8
 
+#define FFINALLOCK(f) ((f)->lock>=0 ? __lockfile((f)) : 0)
 #define FLOCK(f) int __need_unlock = ((f)->lock>=0 ? __lockfile((f)) : 0)
 #define FUNLOCK(f) if (__need_unlock) __unlockfile((f)); else
 
@@ -74,10 +58,10 @@ size_t __string_read(FILE *, unsigned char *, size_t);
 int __toread(FILE *);
 int __towrite(FILE *);
 
-int __overflow(FILE *, int);
-int __oflow(FILE *);
-int __uflow(FILE *);
-int __underflow(FILE *);
+#if defined(__PIC__) && (100*__GNUC__+__GNUC_MINOR__ >= 303)
+__attribute__((visibility("protected")))
+#endif
+int __overflow(FILE *, int), __uflow(FILE *);
 
 int __fseeko(FILE *, off_t, int);
 int __fseeko_unlocked(FILE *, off_t, int);
@@ -87,6 +71,7 @@ size_t __fwritex(const unsigned char *, size_t, FILE *);
 int __putc_unlocked(int, FILE *);
 
 FILE *__fdopen(int, const char *);
+int __fmodeflags(const char *);
 
 #define OFLLOCK() LOCK(libc.ofl_lock)
 #define OFLUNLOCK() UNLOCK(libc.ofl_lock)

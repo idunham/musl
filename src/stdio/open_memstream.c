@@ -1,4 +1,7 @@
 #include "stdio_impl.h"
+#include <errno.h>
+#include <limits.h>
+#include <string.h>
 
 struct cookie {
 	char **bufp;
@@ -74,12 +77,13 @@ FILE *open_memstream(char **bufp, size_t *sizep)
 	f->seek = ms_seek;
 	f->close = ms_close;
 
-	if (!libc.threaded) {
-		f->lock = -1;
-		f->next = libc.ofl_head;
-		if (libc.ofl_head) libc.ofl_head->prev = f;
-		libc.ofl_head = f;
-	}
+	if (!libc.threaded) f->lock = -1;
+
+	OFLLOCK();
+	f->next = libc.ofl_head;
+	if (libc.ofl_head) libc.ofl_head->prev = f;
+	libc.ofl_head = f;
+	OFLUNLOCK();
 
 	return f;
 }

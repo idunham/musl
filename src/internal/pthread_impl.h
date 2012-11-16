@@ -2,17 +2,9 @@
 #define _PTHREAD_IMPL_H
 
 #include <pthread.h>
-#include <sched.h>
 #include <signal.h>
-#include <unistd.h>
-#include <sys/mman.h>
 #include <errno.h>
 #include <limits.h>
-#include <inttypes.h>
-#include <setjmp.h>
-#include <string.h>
-#include <time.h>
-#include <locale.h>
 #include "libc.h"
 #include "syscall.h"
 #include "atomic.h"
@@ -48,6 +40,8 @@ struct pthread {
 	locale_t locale;
 	int killlock[2];
 	int exitlock[2];
+	int startlock[2];
+	unsigned long sigmask[__SYSCALL_SSLEN/sizeof(long)];
 };
 
 struct __timer {
@@ -61,6 +55,9 @@ struct __timer {
 #define _a_guardsize __u.__s[1]
 #define _a_stackaddr __u.__s[2]
 #define _a_detach __u.__i[3*__SU+0]
+#define _a_sched __u.__i[3*__SU+1]
+#define _a_policy __u.__i[3*__SU+2]
+#define _a_prio __u.__i[3*__SU+3]
 #define _m_type __u.__i[0]
 #define _m_lock __u.__i[1]
 #define _m_waiters __u.__i[2]
