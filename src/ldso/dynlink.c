@@ -13,6 +13,7 @@
 #include <errno.h>
 #include <limits.h>
 #include <elf.h>
+#include <link.h>
 #include <setjmp.h>
 #include <pthread.h>
 #include <ctype.h>
@@ -56,6 +57,8 @@ struct dso {
 	size_t *dynv;
 	struct dso *next, *prev;
 
+	Phdr *phdr;
+	int phnum;
 	int refcnt;
 	Sym *syms;
 	uint32_t *hashtab;
@@ -91,6 +94,7 @@ void *__install_initial_tls(void *);
 
 static struct dso *head, *tail, *ldso, *fini_head;
 static char *env_path, *sys_path, *r_path;
+static unsigned long long gencnt;
 static int ssp_used;
 static int runtime;
 static int ldd_mode;
@@ -98,7 +102,6 @@ static int ldso_fail;
 static jmp_buf rtld_fail;
 static pthread_rwlock_t lock;
 static struct debug debug;
-static size_t *auxv;
 static size_t tls_cnt, tls_offset, tls_align = 4*sizeof(size_t);
 static pthread_mutex_t init_fini_lock = { ._m_type = PTHREAD_MUTEX_RECURSIVE };
 
@@ -323,6 +326,8 @@ static void *map_library(int fd, struct dso *dso)
 		eh->e_phoff = sizeof *eh;
 	}
 	ph = (void *)((char *)buf + eh->e_phoff);
+	dso->phdr = ph;
+	dso->phnum = eh->e_phnum;
 	for (i=eh->e_phnum; i; i--, ph=(void *)((char *)ph+eh->e_phentsize)) {
 		if (ph->p_type == PT_DYNAMIC)
 			dyn = ph->p_vaddr;
@@ -429,7 +434,7 @@ static struct dso *load_library(const char *name)
 	char buf[2*NAME_MAX+2];
 	const char *pathname;
 	unsigned char *base, *map;
-	size_t dyno, map_len;
+	size_t map_len;
 	struct dso *p, temp_dso = {0};
 	int fd;
 	struct stat st;
@@ -473,13 +478,16 @@ static struct dso *load_library(const char *name)
 			if (!sys_path) {
 				FILE *f = fopen(ETC_LDSO_PATH, "rbe");
 				if (f) {
-					if (getline(&sys_path, (size_t[1]){0}, f) > 0)
-						sys_path[strlen(sys_path)-1]=0;
+					if (getline(&sys_path, (size_t[1]){0}, f) > 0) {
+						size_t l = strlen(sys_path);
+						if (l && sys_path[l-1]=='\n')
+							sys_path[-1] = 0;
+					}
 					fclose(f);
 				}
 			}
-			if (sys_path) fd = path_open(name, sys_path, buf, sizeof buf);
-			else fd = path_open(name, "/lib:/usr/local/lib:/usr/lib", buf, sizeof buf);
+			if (!sys_path) sys_path = "/lib:/usr/local/lib:/usr/lib";
+			fd = path_open(name, sys_path, buf, sizeof buf);
 		}
 		pathname = buf;
 	}
@@ -792,6 +800,7 @@ void *__dynlink(int argc, char **argv)
 	struct dso *const vdso = builtin_dsos+2;
 	char *env_preload=0;
 	size_t vdso_base;
+	size_t *auxv;
 
 	/* Find aux vector just past environ[] */
 	for (i=argc+1; argv[i]; i++)
@@ -825,18 +834,19 @@ void *__dynlink(int argc, char **argv)
 	lib->name = lib->shortname = "libc.so";
 	lib->global = 1;
 	ehdr = (void *)lib->base;
-	find_map_range((void *)(aux[AT_BASE]+ehdr->e_phoff),
-		ehdr->e_phnum, ehdr->e_phentsize, lib);
-	lib->dynv = (void *)(lib->base + find_dyn(
-		(void *)(aux[AT_BASE]+ehdr->e_phoff),
-		ehdr->e_phnum, ehdr->e_phentsize));
+	lib->phnum = ehdr->e_phnum;
+	lib->phdr = (void *)(aux[AT_BASE]+ehdr->e_phoff);
+	find_map_range(lib->phdr, ehdr->e_phnum, ehdr->e_phentsize, lib);
+	lib->dynv = (void *)(lib->base + find_dyn(lib->phdr,
+                    ehdr->e_phnum, ehdr->e_phentsize));
 	decode_dyn(lib);
 
 	if (aux[AT_PHDR]) {
 		size_t interp_off = 0;
 		size_t tls_image = 0;
 		/* Find load address of the main program, via AT_PHDR vs PT_PHDR. */
-		phdr = (void *)aux[AT_PHDR];
+		app->phdr = phdr = (void *)aux[AT_PHDR];
+		app->phnum = aux[AT_PHNUM];
 		for (i=aux[AT_PHNUM]; i; i--, phdr=(void *)((char *)phdr + aux[AT_PHENT])) {
 			if (phdr->p_type == PT_PHDR)
 				app->base = (void *)(aux[AT_PHDR] - phdr->p_vaddr);
@@ -859,7 +869,7 @@ void *__dynlink(int argc, char **argv)
 	} else {
 		int fd;
 		char *ldname = argv[0];
-		size_t dyno, l = strlen(ldname);
+		size_t l = strlen(ldname);
 		if (l >= 3 && !strcmp(ldname+l-3, "ldd")) ldd_mode = 1;
 		*argv++ = (void *)-1;
 		if (argv[0] && !strcmp(argv[0], "--")) *argv++ = (void *)-1;
@@ -884,6 +894,8 @@ void *__dynlink(int argc, char **argv)
 		close(fd);
 		lib->name = ldname;
 		app->name = argv[0];
+		app->phnum = ehdr->e_phnum;
+		app->phdr = (void *)(app->base + ehdr->e_phoff);
 		aux[AT_ENTRY] = ehdr->e_entry;
 	}
 	if (app->tls_size) {
@@ -907,7 +919,8 @@ void *__dynlink(int argc, char **argv)
 	/* Attach to vdso, if provided by the kernel */
 	if (search_vec(auxv, &vdso_base, AT_SYSINFO_EHDR)) {
 		ehdr = (void *)vdso_base;
-		phdr = (void *)(vdso_base + ehdr->e_phoff);
+		vdso->phdr = phdr = (void *)(vdso_base + ehdr->e_phoff);
+		vdso->phnum = ehdr->e_phnum;
 		for (i=ehdr->e_phnum; i; i--, phdr=(void *)((char *)phdr + ehdr->e_phentsize)) {
 			if (phdr->p_type == PT_DYNAMIC)
 				vdso->dynv = (void *)(vdso_base + phdr->p_offset);
@@ -952,7 +965,6 @@ void *__dynlink(int argc, char **argv)
 
 	update_tls_size();
 	if (tls_cnt) {
-		struct dso *p;
 		void *mem = mmap(0, libc.tls_size, PROT_READ|PROT_WRITE,
 			MAP_ANONYMOUS|MAP_PRIVATE, -1, 0);
 		if (mem==MAP_FAILED ||
@@ -1062,12 +1074,13 @@ void *dlopen(const char *file, int mode)
 
 	update_tls_size();
 
-	if (ssp_used) __init_ssp(auxv);
+	if (ssp_used) __init_ssp(libc.auxv);
 
 	_dl_debug_state();
 	orig_tail = tail;
 end:
 	__release_ptc();
+	if (p) gencnt++;
 	pthread_rwlock_unlock(&lock);
 	if (p) do_init_fini(orig_tail);
 	pthread_setcancelstate(cs, 0);
@@ -1191,6 +1204,32 @@ void *__dlsym(void *restrict p, const char *restrict s, void *restrict ra)
 	res = do_dlsym(p, s, ra);
 	pthread_rwlock_unlock(&lock);
 	return res;
+}
+
+int dl_iterate_phdr(int(*callback)(struct dl_phdr_info *info, size_t size, void *data), void *data)
+{
+	struct dso *current;
+	struct dl_phdr_info info;
+	int ret = 0;
+	for(current = head; current;) {
+		info.dlpi_addr      = (uintptr_t)current->base;
+		info.dlpi_name      = current->name;
+		info.dlpi_phdr      = current->phdr;
+		info.dlpi_phnum     = current->phnum;
+		info.dlpi_adds      = gencnt;
+		info.dlpi_subs      = 0;
+		info.dlpi_tls_modid = current->tls_id;
+		info.dlpi_tls_data  = current->tls_image;
+
+		ret = (callback)(&info, sizeof (info), data);
+
+		if (ret != 0) break;
+
+		pthread_rwlock_rdlock(&lock);
+		current = current->next;
+		pthread_rwlock_unlock(&lock);
+	}
+	return ret;
 }
 #else
 void *dlopen(const char *file, int mode)

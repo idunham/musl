@@ -8,6 +8,3 @@ int fputc(int c, FILE *f)
 	__unlockfile(f);
 	return c;
 }
-
-weak_alias(fputc, putc);
-weak_alias(fputc, _IO_putc);
