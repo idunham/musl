@@ -147,7 +147,7 @@ void swab(const void *__restrict, void *__restrict, ssize_t);
 #endif
 
 #if defined(_GNU_SOURCE) || defined(_BSD_SOURCE) \
- || (defined(_XOPEN_SOURCE) && _XOPEN_SOURCE < 700)
+ || (defined(_XOPEN_SOURCE) && _XOPEN_SOURCE+0 < 700)
 int usleep(unsigned);
 unsigned ualarm(unsigned, unsigned);
 #endif
@@ -225,6 +225,7 @@ void syncfs(int);
 #define _POSIX_THREAD_SAFE_FUNCTIONS _POSIX_VERSION
 #define _POSIX_THREAD_ATTR_STACKADDR _POSIX_VERSION
 #define _POSIX_THREAD_ATTR_STACKSIZE _POSIX_VERSION
+#define _POSIX_THREAD_PRIORITY_SCHEDULING _POSIX_VERSION
 #define _POSIX_TIMERS           _POSIX_VERSION
 #define _POSIX_TIMEOUTS         _POSIX_VERSION
 #define _POSIX_MONOTONIC_CLOCK  _POSIX_VERSION
