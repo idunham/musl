@@ -1,6 +1,34 @@
 #if defined(_POSIX_SOURCE) || defined(_POSIX_C_SOURCE) \
  || defined(_XOPEN_SOURCE) || defined(_GNU_SOURCE) || defined(_BSD_SOURCE)
 
+#if defined(_GNU_SOURCE) || defined(_BSD_SOURCE)
+typedef unsigned long long greg_t, gregset_t[32];
+typedef struct {
+	union {
+		double fp_dregs[32];
+		struct {
+			float _fp_fregs;
+			unsigned _fp_pad;
+		} fp_fregs[32];
+	} fp_r;
+} fpregset_t;
+struct sigcontext
+{
+	unsigned sc_regmask, sc_status;
+	unsigned long long sc_pc, sc_regs[32], sc_fpregs[32];
+	unsigned sc_ownedfp, sc_fpc_csr, sc_fpc_eir, sc_used_math, sc_dsp;
+	unsigned long long sc_mdhi, sc_mdlo;
+	unsigned long sc_hi1, sc_lo1, sc_hi2, sc_lo2, sc_hi3, sc_lo3;
+};
+typedef struct
+{
+	unsigned regmask, status;
+	unsigned long long pc, regs[32], fpregs[32];
+	unsigned ownedfp, fpc_csr, fpc_eir, used_math, dsp;
+	unsigned long long mdhi, mdlo;
+	unsigned long hi1, lo1, hi2, lo2, hi3, lo3;
+} mcontext_t;
+#else
 typedef struct {
 	unsigned __mc1[2];
 	unsigned long long __mc2[65];
@@ -8,6 +36,7 @@ typedef struct {
 	unsigned long long __mc4[2];
 	unsigned __mc5[6];
 } mcontext_t;
+#endif
 
 typedef struct __ucontext {
 	unsigned long uc_flags;
@@ -33,18 +62,6 @@ typedef struct __ucontext {
 #define SIG_BLOCK     1
 #define SIG_UNBLOCK   2
 #define SIG_SETMASK   3
-
-#if defined(_GNU_SOURCE) || defined(_BSD_SOURCE)
-struct sigcontext
-{
-	unsigned sc_regmask, sc_status;
-	unsigned long long sc_pc, sc_regs[32], sc_fpregs[32];
-	unsigned sc_ownedfp, sc_fpc_csr, sc_fpc_eir, sc_used_math, sc_dsp;
-	unsigned long long sc_mdhi, sc_mdlo;
-	unsigned long sc_hi1, sc_lo1, sc_hi2, sc_lo2, sc_hi3, sc_lo3;
-};
-#define NSIG      64
-#endif
 
 #endif
 
@@ -82,3 +99,5 @@ struct sigcontext
 #define SIGXCPU   30
 #define SIGXFSZ   31
 #define SIGUNUSED SIGSYS
+
+#define _NSIG 129
