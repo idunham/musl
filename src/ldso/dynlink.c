@@ -433,7 +433,7 @@ static struct dso *load_library(const char *name)
 {
 	char buf[2*NAME_MAX+2];
 	const char *pathname;
-	unsigned char *base, *map;
+	unsigned char *map;
 	size_t map_len;
 	struct dso *p, temp_dso = {0};
 	int fd;
@@ -566,7 +566,7 @@ static struct dso *load_library(const char *name)
 	p->prev = tail;
 	tail = p;
 
-	if (ldd_mode) dprintf(1, "\t%s => %s (%p)\n", name, pathname, base);
+	if (ldd_mode) dprintf(1, "\t%s => %s (%p)\n", name, pathname, p->base);
 
 	return p;
 }
@@ -999,11 +999,14 @@ void *__dynlink(int argc, char **argv)
 
 	if (ssp_used) __init_ssp((void *)aux[AT_RANDOM]);
 
-	atexit(do_fini);
-	do_init_fini(tail);
-
 	errno = 0;
 	return (void *)aux[AT_ENTRY];
+}
+
+void __init_ldso_ctors(void)
+{
+	atexit(do_fini);
+	do_init_fini(tail);
 }
 
 void *dlopen(const char *file, int mode)
