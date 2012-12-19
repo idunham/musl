@@ -166,13 +166,14 @@ int getdtablesize(void);
 int sethostname(const char *, size_t);
 int getdomainname(char *, size_t);
 int setdomainname(const char *, size_t);
-int setgroups(size_t, const gid_t []);
+int setgroups(size_t, const gid_t *);
 char *getpass(const char *);
 int daemon(int, int);
 void setusershell(void);
 void endusershell(void);
 char *getusershell(void);
 int acct(const char *);
+long syscall(long, ...);
 #endif
 
 #ifdef _GNU_SOURCE
