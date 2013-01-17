@@ -1091,7 +1091,7 @@ end:
 	return p;
 }
 
-static int invalid_dso_handle(struct dso *h)
+static int invalid_dso_handle(void *h)
 {
 	struct dso *p;
 	for (p=head; p; p=p->next) if (h==p) return 0;
@@ -1188,7 +1188,7 @@ int __dladdr(void *addr, Dl_info *info)
 	}
 
 	for (; nsym; nsym--, sym++) {
-		if (sym->st_shndx && sym->st_value
+		if (sym->st_value
 		 && (1<<(sym->st_info&0xf) & OK_TYPES)
 		 && (1<<(sym->st_info>>4) & OK_BINDS)) {
 			void *symaddr = p->base + sym->st_value;
@@ -1246,7 +1246,7 @@ int dl_iterate_phdr(int(*callback)(struct dl_phdr_info *info, size_t size, void 
 	return ret;
 }
 #else
-static int invalid_dso_handle(struct dso *h)
+static int invalid_dso_handle(void *h)
 {
 	snprintf(errbuf, sizeof errbuf, "Invalid library handle %p", (void *)h);
 	errflag = 1;
