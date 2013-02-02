@@ -10,6 +10,17 @@ void setgrent()
 
 weak_alias(setgrent, endgrent);
 
+struct group *__fgetgrent(FILE *f)
+{
+	static char *line, **mem;
+	static struct group gr;
+	size_t size=0, nmem=0;
+	if (!f) return 0;
+	return __getgrent_a(f, &gr, &line, &size, &mem, &nmem);
+}
+
+weak_alias(__fgetgrent,fgetgrent);
+
 struct group *getgrent()
 {
 	static char *line, **mem;
