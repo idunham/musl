@@ -10,7 +10,7 @@
 #ifdef SYS_vm86old
 struct vm86_struct;
 
-int vm86old(struct vm86_struct *info)
+static int vm86old(struct vm86_struct *info)
 {
 	return syscall(SYS_vm86old, info);
 }
@@ -19,7 +19,7 @@ int vm86old(struct vm86_struct *info)
 #ifdef SYS_vm86
 struct vm86plus_struct;
 
-int vm86(unsigned long fn, struct vm86plus_struct *v86)
+static int vm86(unsigned long fn, struct vm86plus_struct *v86)
 {
 	return syscall(SYS_vm86, fn, v86);
 }
