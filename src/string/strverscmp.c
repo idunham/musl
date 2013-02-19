@@ -26,15 +26,11 @@ int strverscmp(const char *l, const char *r)
 		haszero=0;
 	}
 	if ((isdigit(l[0]) && isdigit(r[0]) ) && haszero) {
-		size_t lenl=0, lenr=0, firstl=l[0], firstr=r[0];
-		while (isdigit(l++[0]) ) {
-			lenl++;
-		}
-		while (isdigit(r++[0]) ) {
-			lenr++;
-		}
+		size_t lenl=0, lenr=0;
+		while (isdigit(l[lenl]) ) lenl++;
+		while (isdigit(r[lenr]) ) lenr++;
 		if (lenl==lenr) {
-			return (firstl -  firstr);
+			return (*l -  *r);
 		} else {
 			return (lenl - lenr);
 		}
