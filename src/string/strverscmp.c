@@ -9,11 +9,11 @@ int strverscmp(const char *l, const char *r)
 	while (*l==*r) {
 		if (!*l) return 0;
 
-		if (l[0]=='0') {
+		if (*l=='0') {
 			if (haszero==1) {
 				haszero=0;
 			}
-		} else if (isdigit(l[0])) {
+		} else if (isdigit(*l)) {
 			if (haszero==1) {
 				haszero=2;
 			}
@@ -22,10 +22,10 @@ int strverscmp(const char *l, const char *r)
 		}
 		l++; r++;
 	}
-	if (haszero==1 && (l[0]=='0' || r[0]=='0')) {
+	if (haszero==1 && (*l=='0' || *r=='0')) {
 		haszero=0;
 	}
-	if ((isdigit(l[0]) && isdigit(r[0]) ) && haszero) {
+	if ((isdigit(*l) && isdigit(*r) ) && haszero) {
 		size_t lenl=0, lenr=0;
 		while (isdigit(l[lenl]) ) lenl++;
 		while (isdigit(r[lenr]) ) lenr++;
@@ -35,6 +35,6 @@ int strverscmp(const char *l, const char *r)
 			return (lenl - lenr);
 		}
 	} else {
-		return (l[0] -  r[0]);
+		return (*l -  *r);
 	}
 }
