@@ -118,6 +118,9 @@ tools/musl-gcc: config.mak
 $(DESTDIR)$(bindir)/%: tools/%
 	install -D $< $@
 
+$(DESTDIR)$(libdir)/libc.so: $(DESTDIR)$(LDSO_PATHNAME)
+	ln -sf $(LDSO_PATHNAME) $@
+
 $(DESTDIR)$(libdir)/%.so: lib/%.so
 	install -D -m 755 $< $@
 
