@@ -127,8 +127,8 @@ $(DESTDIR)$(libdir)/%: lib/%
 $(DESTDIR)$(includedir)/%: include/%
 	install -D -m 644 $< $@
 
-$(DESTDIR)$(LDSO_PATHNAME): $(DESTDIR)$(syslibdir)
-	ln -sf $(libdir)/libc.so $@ || true
+$(DESTDIR)$(LDSO_PATHNAME): lib/libc.so
+	install -D -m 755 $< $@
 
 $(DESTDIR)$(syslibdir):
 	install -d -m 755 $(DESTDIR)$(syslibdir)
