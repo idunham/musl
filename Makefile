@@ -121,7 +121,7 @@ $(DESTDIR)$(bindir)/%: tools/%
 $(DESTDIR)$(libdir)/libc.so: $(DESTDIR)$(LDSO_PATHNAME)
 	ln -sf $(LDSO_PATHNAME) $@
 
-$(DESTDIR)$(libdir)/%.so: lib/%.so
+$(DESTDIR)$(LDSO_PATHNAME): lib/libc.so
 	install -D -m 755 $< $@
 
 $(DESTDIR)$(libdir)/%: lib/%
@@ -129,12 +129,6 @@ $(DESTDIR)$(libdir)/%: lib/%
 
 $(DESTDIR)$(includedir)/%: include/%
 	install -D -m 644 $< $@
-
-$(DESTDIR)$(LDSO_PATHNAME): lib/libc.so
-	install -D -m 755 $< $@
-
-$(DESTDIR)$(syslibdir):
-	install -d -m 755 $(DESTDIR)$(syslibdir)
 
 install-libs: $(ALL_LIBS:lib/%=$(DESTDIR)$(libdir)/%) $(if $(SHARED_LIBS),$(DESTDIR)$(LDSO_PATHNAME),)
 
