@@ -154,10 +154,6 @@ int getservbyname_r(const char *, const char *, struct servent *, char *, size_t
 #define EAI_IDN_ENCODE -105
 #define NI_MAXHOST 255
 #define NI_MAXSERV 32
-#define HOST_NOT_FOUND 1
-#define TRY_AGAIN      2
-#define NO_RECOVERY    3
-#define NO_DATA        4
 
 int innetgr(const char *, const char *, const char *, const char *);
 #endif
