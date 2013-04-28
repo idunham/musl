@@ -85,21 +85,36 @@ int __signbitl(long double);
 
 #define isunordered(x,y) (isnan((x)) ? ((void)(y),1) : isnan((y)))
 
-static __inline int __isrel(long double __x, long double __y, int __rel)
-{
-	if (isunordered(__x, __y)) return 0;
-	if (__rel==-2) return __x < __y;
-	if (__rel==2) return __x > __y;
-	if (__rel==-1) return __x <= __y;
-	if (__rel==1) return __x >= __y;
-	return __x != __y;
-}
+#define __ISREL_DEF(rel, op, type) \
+static __inline int __is##rel(type __x, type __y) \
+{ return !isunordered(__x,__y) && __x op __y; }
 
-#define isless(x,y) __isrel((x), (y), -2)
-#define islessequal(x,y) __isrel((x), (y), -1)
-#define islessgreater(x,y) __isrel((x), (y), 0)
-#define isgreaterequal(x,y) __isrel((x), (y), 1)
-#define isgreater(x,y) __isrel((x), (y), 2)
+__ISREL_DEF(lessf, <, float)
+__ISREL_DEF(less, <, double)
+__ISREL_DEF(lessl, <, long double)
+__ISREL_DEF(lessequalf, <=, float)
+__ISREL_DEF(lessequal, <=, double)
+__ISREL_DEF(lessequall, <=, long double)
+__ISREL_DEF(lessgreaterf, !=, float)
+__ISREL_DEF(lessgreater, !=, double)
+__ISREL_DEF(lessgreaterl, !=, long double)
+__ISREL_DEF(greaterf, >, float)
+__ISREL_DEF(greater, >, double)
+__ISREL_DEF(greaterl, >, long double)
+__ISREL_DEF(greaterequalf, >=, float)
+__ISREL_DEF(greaterequal, >=, double)
+__ISREL_DEF(greaterequall, >=, long double)
+
+#define __tg_pred_2(x, y, p) ( \
+	sizeof((x)+(y)) == sizeof(float) ? p##f(x, y) : \
+	sizeof((x)+(y)) == sizeof(double) ? p(x, y) : \
+	p##l(x, y) )
+
+#define isless(x, y)            __tg_pred_2(x, y, __isless)
+#define islessequal(x, y)       __tg_pred_2(x, y, __islessequal)
+#define islessgreater(x, y)     __tg_pred_2(x, y, __islessgreater)
+#define isgreater(x, y)         __tg_pred_2(x, y, __isgreater)
+#define isgreaterequal(x, y)    __tg_pred_2(x, y, __isgreaterequal)
 
 double      acos(double);
 float       acosf(float);
@@ -331,6 +346,7 @@ long double truncl(long double);
 
 
 #if defined(_XOPEN_SOURCE) || defined(_BSD_SOURCE)
+#undef  MAXFLOAT
 #define MAXFLOAT        3.40282347e+38F
 #endif
 
@@ -383,14 +399,6 @@ float       ynf(int, float);
 
 #ifdef _GNU_SOURCE
 long double lgammal_r(long double, int*);
-
-long double j0l(long double);
-long double j1l(long double);
-long double jnl(int, long double);
-
-long double y0l(long double);
-long double y1l(long double);
-long double ynl(int, long double);
 
 void        sincos(double, double*, double*);
 void        sincosf(float, float*, float*);

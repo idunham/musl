@@ -25,8 +25,8 @@ TYPEDEF __builtin_va_list va_list;
 TYPEDEF int wchar_t;
 #endif
 TYPEDEF int wint_t;
-TYPEDEF int wctrans_t;
-TYPEDEF int wctype_t;
+TYPEDEF const int * wctrans_t;
+TYPEDEF unsigned long wctype_t;
 
 TYPEDEF signed char int8_t;
 TYPEDEF short       int16_t;
@@ -55,11 +55,15 @@ TYPEDEF uint64_t           uint_fast64_t;
 TYPEDEF long          intptr_t;
 TYPEDEF unsigned long uintptr_t;
 
-TYPEDEF double float_t;
+TYPEDEF long          intmax_t;
+TYPEDEF unsigned long uintmax_t;
+
+TYPEDEF float float_t;
 TYPEDEF double double_t;
 
 TYPEDEF long time_t;
 TYPEDEF long suseconds_t;
+TYPEDEF unsigned useconds_t;
 STRUCT timeval { time_t tv_sec; long tv_usec; };
 STRUCT timespec { time_t tv_sec; long tv_nsec; };
 

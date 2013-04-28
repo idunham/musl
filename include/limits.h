@@ -9,7 +9,7 @@
 
 /* Support signed or unsigned plain-char */
 
-#ifdef __CHAR_UNSIGNED__
+#if '\0'-1 > 0
 #define CHAR_MIN 0
 #define CHAR_MAX 255
 #else
@@ -37,7 +37,7 @@
 #define MB_LEN_MAX 4
 
 #if defined(_POSIX_SOURCE) || defined(_POSIX_C_SOURCE) \
- || defined(_XOPEN_SOURCE) || defined(_GNU_SOURCE)
+ || defined(_XOPEN_SOURCE) || defined(_GNU_SOURCE) || defined(_BSD_SOURCE)
 
 #define PIPE_BUF 4096
 #define PAGESIZE PAGE_SIZE
@@ -58,8 +58,8 @@
 
 /* Implementation choices... */
 
-#define PTHREAD_KEYS_MAX  1024
-#define PTHREAD_STACK_MIN PAGE_SIZE
+#define PTHREAD_KEYS_MAX 128
+#define PTHREAD_STACK_MIN 2048
 #define PTHREAD_DESTRUCTOR_ITERATIONS 4
 #define SEM_VALUE_MAX 0x7fffffff
 #define SEM_NSEMS_MAX 256

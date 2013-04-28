@@ -16,7 +16,7 @@ includedir = $(prefix)/include
 libdir = $(prefix)/lib
 syslibdir = /lib
 
-SRCS = $(sort $(wildcard src/*/*.c))
+SRCS = $(sort $(wildcard src/*/*.c arch/$(ARCH)/src/*.c))
 OBJS = $(SRCS:.c=.o)
 LOBJS = $(OBJS:.o=.lo)
 GENH = include/bits/alltypes.h
@@ -32,7 +32,7 @@ CFLAGS_ALL = $(CFLAGS_C99FSE)
 CFLAGS_ALL += -D_XOPEN_SOURCE=700 -I./arch/$(ARCH) -I./src/internal -I./include
 CFLAGS_ALL += $(CPPFLAGS) $(CFLAGS)
 CFLAGS_ALL_STATIC = $(CFLAGS_ALL)
-CFLAGS_ALL_SHARED = $(CFLAGS_ALL) -fPIC -DSHARED -O3
+CFLAGS_ALL_SHARED = $(CFLAGS_ALL) -fPIC -DSHARED
 
 AR      = $(CROSS_COMPILE)ar
 RANLIB  = $(CROSS_COMPILE)ranlib
@@ -94,7 +94,7 @@ src/ldso/dynlink.lo: arch/$(ARCH)/reloc.h
 lib/libc.so: $(LOBJS)
 	$(CC) $(CFLAGS_ALL_SHARED) $(LDFLAGS) -nostdlib -shared \
 	-Wl,-e,_start -Wl,-Bsymbolic-functions \
-	-Wl,-soname=libc.so -o $@ $(LOBJS) $(LIBCC)
+	-o $@ $(LOBJS) $(LIBCC)
 
 lib/libc.a: $(OBJS)
 	rm -f $@
@@ -112,7 +112,7 @@ lib/musl-gcc.specs: tools/musl-gcc.specs.sh config.mak
 	sh $< "$(includedir)" "$(libdir)" "$(LDSO_PATHNAME)" > $@
 
 tools/musl-gcc: config.mak
-	printf '#!/bin/sh\nexec gcc "$$@" -specs "%s/musl-gcc.specs"\n' "$(libdir)" > $@
+	printf '#!/bin/sh\nexec "$${REALGCC:-gcc}" "$$@" -specs "%s/musl-gcc.specs"\n' "$(libdir)" > $@
 	chmod +x $@
 
 $(DESTDIR)$(bindir)/%: tools/%

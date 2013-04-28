@@ -7,13 +7,7 @@ extern "C" {
 
 #include <features.h>
 
-#undef NULL
-#ifdef __cplusplus
-#define NULL 0
-#else
-#define NULL ((void*)0)
-#endif
-
+#define NULL 0L
 
 #define __NEED_size_t
 #define __NEED_time_t
@@ -45,6 +39,10 @@ struct tm
 	long __tm_gmtoff;
 	const char *__tm_zone;
 };
+#if defined(_BSD_SOURCE) || defined(_GNU_SOURCE)
+#define tm_gmtoff __tm_gmtoff
+#define tm_zone __tm_zone
+#endif
 
 clock_t clock (void);
 time_t time (time_t *);

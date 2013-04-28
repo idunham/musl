@@ -6,7 +6,11 @@ extern "C" {
 #endif
 
 #define complex _Complex
+#ifdef __GNUC__
+#define _Complex_I (__extension__ 1.0fi)
+#else
 #define _Complex_I 1.0fi
+#endif
 #define I _Complex_I
 
 double complex cacos(double complex);
@@ -107,6 +111,13 @@ long double creall(long double complex);
 #define cimag(x) __CIMAG(x, double)
 #define cimagf(x) __CIMAG(x, float)
 #define cimagl(x) __CIMAG(x, long double)
+
+#define __CMPLX(x, y, t) \
+	((union { _Complex t __z; t __xy[2]; }){.__xy = {(x),(y)}}.__z)
+
+#define CMPLX(x, y) __CMPLX(x, y, double)
+#define CMPLXF(x, y) __CMPLX(x, y, float)
+#define CMPLXL(x, y) __CMPLX(x, y, long double)
 
 #ifdef __cplusplus
 }

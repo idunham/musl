@@ -119,7 +119,7 @@ static void sha256_init(struct sha256 *s)
 	s->h[7] = 0x5be0cd19;
 }
 
-static void sha256_sum(struct sha256 *s, uint8_t md[20])
+static void sha256_sum(struct sha256 *s, uint8_t *md)
 {
 	int i;
 
@@ -153,7 +153,7 @@ static void sha256_update(struct sha256 *s, const void *m, unsigned long len)
 	memcpy(s->buf, p, len);
 }
 
-static unsigned char b64[] =
+static const unsigned char b64[] =
 "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
 static char *to64(char *s, unsigned int u, int n)
@@ -172,7 +172,7 @@ static char *to64(char *s, unsigned int u, int n)
 #define SALT_MAX 16
 #define ROUNDS_DEFAULT 5000
 #define ROUNDS_MIN 1000
-#define ROUNDS_MAX 50000
+#define ROUNDS_MAX 9999999
 
 /* hash n bytes of the repeated md message digest */
 static void hashmd(struct sha256 *s, unsigned int n, const void *md)

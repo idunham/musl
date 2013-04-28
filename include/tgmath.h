@@ -13,7 +13,7 @@ sizeof(double) == sizeof(long double)
 #include <math.h>
 #include <complex.h>
 
-#define __IS_FP(x) !!((1?1:(x))/2)
+#define __IS_FP(x) (sizeof((x)+1ULL) == sizeof((x)+1.0f))
 #define __IS_CX(x) (__IS_FP(x) && sizeof(x) == sizeof((x)+I))
 #define __IS_REAL(x) (__IS_FP(x) && 2*sizeof(x) == sizeof((x)+I))
 
@@ -27,42 +27,62 @@ sizeof(double) == sizeof(long double)
 /* return type */
 
 #ifdef __GNUC__
+/*
+the result must be casted to the right type
+(otherwise the result type is determined by the conversion
+rules applied to all the function return types so it is long
+double or long double complex except for integral functions)
+
+this cannot be done in c99, so the typeof gcc extension is
+used and that the type of ?: depends on wether an operand is
+a null pointer constant or not
+(in c11 _Generic can be used)
+
+the c arguments below must be integer constant expressions
+so they can be in null pointer constants
+(__IS_FP above was carefully chosen this way)
+*/
+/* if c then t else void */
+#define __type1(c,t) __typeof__(*(0?(t*)0:(void*)!(c)))
+/* if c then t1 else t2 */
+#define __type2(c,t1,t2) __typeof__(*(0?(__type1(c,t1)*)0:(__type1(!(c),t2)*)0))
 /* cast to double when x is integral, otherwise use typeof(x) */
-#define __RETCAST(x) (__typeof__(*( \
-	0 ? (__typeof__(0 ? (double *)0 : (void *)__IS_FP(x)))0 : \
-	    (__typeof__(0 ? (__typeof__(x) *)0 : (void *)!__IS_FP(x)))0 )))
-/* 2 args case, consider complex types (for cpow) */
-#define __RETCAST_2(x, y) (__typeof__(*( \
-	0 ? (__typeof__(0 ? (double *)0 : \
-		(void *)!((!__IS_FP(x) || !__IS_FP(y)) && __FLT((x)+(y)+1.0f))))0 : \
-	0 ? (__typeof__(0 ? (double complex *)0 : \
-		(void *)!((!__IS_FP(x) || !__IS_FP(y)) && __FLTCX((x)+(y)))))0 : \
-	    (__typeof__(0 ? (__typeof__((x)+(y)) *)0 : \
-		(void *)((!__IS_FP(x) || !__IS_FP(y)) && (__FLT((x)+(y)+1.0f) || __FLTCX((x)+(y))))))0 )))
-/* 3 args case, don't consider complex types (fma only) */
-#define __RETCAST_3(x, y, z) (__typeof__(*( \
-	0 ? (__typeof__(0 ? (double *)0 : \
-		(void *)!((!__IS_FP(x) || !__IS_FP(y) || !__IS_FP(z)) && __FLT((x)+(y)+(z)+1.0f))))0 : \
-	    (__typeof__(0 ? (__typeof__((x)+(y)) *)0 : \
-		(void *)((!__IS_FP(x) || !__IS_FP(y) || !__IS_FP(z)) && __FLT((x)+(y)+(z)+1.0f))))0 )))
+#define __RETCAST(x) ( \
+	__type2(__IS_FP(x), __typeof__(x), double))
+/* 2 args case, should work for complex types (cpow) */
+#define __RETCAST_2(x, y) ( \
+	__type2(__IS_FP(x) && __IS_FP(y), \
+		__typeof__((x)+(y)), \
+		__typeof__((x)+(y)+1.0)))
+/* 3 args case (fma only) */
+#define __RETCAST_3(x, y, z) ( \
+	__type2(__IS_FP(x) && __IS_FP(y) && __IS_FP(z), \
+		__typeof__((x)+(y)+(z)), \
+		__typeof__((x)+(y)+(z)+1.0)))
 /* drop complex from the type of x */
-#define __TO_REAL(x) *( \
-	0 ? (__typeof__(0 ? (double *)0 : (void *)!__DBLCX(x)))0 : \
-	0 ? (__typeof__(0 ? (float *)0 : (void *)!__FLTCX(x)))0 : \
-	0 ? (__typeof__(0 ? (long double *)0 : (void *)!__LDBLCX(x)))0 : \
-	    (__typeof__(0 ? (__typeof__(x) *)0 : (void *)__IS_CX(x)))0 )
+/* TODO: wrong when sizeof(long double)==sizeof(double) */
+#define __RETCAST_REAL(x) (  \
+	__type2(__IS_FP(x) && sizeof((x)+I) == sizeof(float complex), float, \
+	__type2(sizeof((x)+1.0+I) == sizeof(double complex), double, \
+		long double)))
+/* add complex to the type of x */
+#define __RETCAST_CX(x) (__typeof__(__RETCAST(x)0+I))
 #else
 #define __RETCAST(x)
 #define __RETCAST_2(x, y)
 #define __RETCAST_3(x, y, z)
+#define __RETCAST_REAL(x)
+#define __RETCAST_CX(x)
 #endif
 
 /* function selection */
 
-#define __tg_real(fun, x) (__RETCAST(x)( \
+#define __tg_real_nocast(fun, x) ( \
 	__FLT(x) ? fun ## f (x) : \
 	__LDBL(x) ? fun ## l (x) : \
-	fun(x) ))
+	fun(x) )
+
+#define __tg_real(fun, x) (__RETCAST(x)__tg_real_nocast(fun, x))
 
 #define __tg_real_2_1(fun, x, y) (__RETCAST(x)( \
 	__FLT(x) ? fun ## f (x, y) : \
@@ -74,12 +94,12 @@ sizeof(double) == sizeof(long double)
 	__LDBL((x)+(y)) ? fun ## l (x, y) : \
 	fun(x, y) ))
 
-#define __tg_complex(fun, x) (__RETCAST((x)+I)( \
+#define __tg_complex(fun, x) (__RETCAST_CX(x)( \
 	__FLTCX((x)+I) && __IS_FP(x) ? fun ## f (x) : \
 	__LDBLCX((x)+I) ? fun ## l (x) : \
 	fun(x) ))
 
-#define __tg_complex_retreal(fun, x) (__RETCAST(__TO_REAL(x))( \
+#define __tg_complex_retreal(fun, x) (__RETCAST_REAL(x)( \
 	__FLTCX((x)+I) && __IS_FP(x) ? fun ## f (x) : \
 	__LDBLCX((x)+I) ? fun ## l (x) : \
 	fun(x) ))
@@ -113,7 +133,7 @@ sizeof(double) == sizeof(long double)
 	__LDBL((x)+(y)) ? powl(x, y) : \
 	pow(x, y) ))
 
-#define __tg_real_complex_fabs(x) (__RETCAST(__TO_REAL(x))( \
+#define __tg_real_complex_fabs(x) (__RETCAST_REAL(x)( \
 	__FLTCX(x) ? cabsf(x) : \
 	__DBLCX(x) ? cabs(x) : \
 	__LDBLCX(x) ? cabsl(x) : \
@@ -217,18 +237,18 @@ sizeof(double) == sizeof(long double)
 #define fmod(x,y)       __tg_real_2(fmod, (x), (y))
 #define frexp(x,y)      __tg_real_2_1(frexp, (x), (y))
 #define hypot(x,y)      __tg_real_2(hypot, (x), (y))
-#define ilogb(x)        __tg_real(ilogb, (x))
+#define ilogb(x)        __tg_real_nocast(ilogb, (x))
 #define ldexp(x,y)      __tg_real_2_1(ldexp, (x), (y))
 #define lgamma(x)       __tg_real(lgamma, (x))
-#define llrint(x)       __tg_real(llrint, (x))
-#define llround(x)      __tg_real(llround, (x))
+#define llrint(x)       __tg_real_nocast(llrint, (x))
+#define llround(x)      __tg_real_nocast(llround, (x))
 #define log(x)          __tg_real_complex(log, (x))
 #define log10(x)        __tg_real(log10, (x))
 #define log1p(x)        __tg_real(log1p, (x))
 #define log2(x)         __tg_real(log2, (x))
 #define logb(x)         __tg_real(logb, (x))
-#define lrint(x)        __tg_real(lrint, (x))
-#define lround(x)       __tg_real(lround, (x))
+#define lrint(x)        __tg_real_nocast(lrint, (x))
+#define lround(x)       __tg_real_nocast(lround, (x))
 #define nearbyint(x)    __tg_real(nearbyint, (x))
 #define nextafter(x,y)  __tg_real_2(nextafter, (x), (y))
 #define nexttoward(x,y) __tg_real_2(nexttoward, (x), (y))

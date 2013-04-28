@@ -2,17 +2,9 @@
 #define _PTHREAD_IMPL_H
 
 #include <pthread.h>
-#include <sched.h>
 #include <signal.h>
-#include <unistd.h>
-#include <sys/mman.h>
 #include <errno.h>
 #include <limits.h>
-#include <inttypes.h>
-#include <setjmp.h>
-#include <string.h>
-#include <time.h>
-#include <locale.h>
 #include "libc.h"
 #include "syscall.h"
 #include "atomic.h"
@@ -22,7 +14,7 @@
 
 struct pthread {
 	struct pthread *self;
-	void *dtv, *unused1, *unused2;
+	void **dtv, *unused1, *unused2;
 	uintptr_t sysinfo;
 	uintptr_t canary;
 	pid_t tid, pid;
@@ -31,6 +23,8 @@ struct pthread {
 	int detached;
 	unsigned char *map_base;
 	size_t map_size;
+	void *stack;
+	size_t stack_size;
 	void *start_arg;
 	void *(*start)(void *);
 	void *result;
@@ -48,6 +42,8 @@ struct pthread {
 	locale_t locale;
 	int killlock[2];
 	int exitlock[2];
+	int startlock[2];
+	unsigned long sigmask[_NSIG/8/sizeof(long)];
 };
 
 struct __timer {
@@ -61,6 +57,9 @@ struct __timer {
 #define _a_guardsize __u.__s[1]
 #define _a_stackaddr __u.__s[2]
 #define _a_detach __u.__i[3*__SU+0]
+#define _a_sched __u.__i[3*__SU+1]
+#define _a_policy __u.__i[3*__SU+2]
+#define _a_prio __u.__i[3*__SU+3]
 #define _m_type __u.__i[0]
 #define _m_lock __u.__i[1]
 #define _m_waiters __u.__i[2]
@@ -92,10 +91,10 @@ struct __timer {
 
 #define SIGALL_SET ((sigset_t *)(const unsigned long long [2]){ -1,-1 })
 #define SIGPT_SET \
-	((sigset_t *)(const unsigned long [__SYSCALL_SSLEN/sizeof(long)]){ \
+	((sigset_t *)(const unsigned long [_NSIG/8/sizeof(long)]){ \
 	[sizeof(long)==4] = 3UL<<(32*(sizeof(long)>4)) })
 #define SIGTIMER_SET \
-	((sigset_t *)(const unsigned long [__SYSCALL_SSLEN/sizeof(long)]){ \
+	((sigset_t *)(const unsigned long [_NSIG/8/sizeof(long)]){ \
 	 0x80000000 })
 
 pthread_t __pthread_self_init(void);
@@ -109,10 +108,12 @@ void __unmapself(void *, size_t);
 
 int __timedwait(volatile int *, int, clockid_t, const struct timespec *, void (*)(void *), void *, int);
 void __wait(volatile int *, volatile int *, int, int);
-void __wake(volatile int *, int, int);
+#define __wake(addr, cnt, priv) \
+	__syscall(SYS_futex, addr, FUTEX_WAKE, (cnt)<0?INT_MAX:(cnt))
 
-void __synccall_lock();
-void __synccall_unlock();
+void __acquire_ptc();
+void __release_ptc();
+void __inhibit_ptc();
 
 #define DEFAULT_STACK_SIZE 81920
 #define DEFAULT_GUARD_SIZE PAGE_SIZE

@@ -1,10 +1,15 @@
 #include "stdio_impl.h"
+#include <stdlib.h>
+#include <termios.h>
+#include <sys/ioctl.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <string.h>
 
 FILE *__fdopen(int fd, const char *mode)
 {
 	FILE *f;
 	struct termios tio;
-	int plus = !!strchr(mode, '+');
 
 	/* Check for valid initial mode character */
 	if (!strchr("rwa", *mode)) {
@@ -19,7 +24,10 @@ FILE *__fdopen(int fd, const char *mode)
 	memset(f, 0, sizeof *f);
 
 	/* Impose mode restrictions */
-	if (!plus) f->flags = (*mode == 'r') ? F_NOWR : F_NORD;
+	if (!strchr(mode, '+')) f->flags = (*mode == 'r') ? F_NOWR : F_NORD;
+
+	/* Apply close-on-exec flag */
+	if (strchr(mode, 'e')) __syscall(SYS_fcntl, fd, F_SETFD, FD_CLOEXEC);
 
 	/* Set append mode on fd if opened for append */
 	if (*mode == 'a') {

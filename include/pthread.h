@@ -91,6 +91,10 @@ int pthread_setcanceltype(int, int *);
 void pthread_testcancel(void);
 int pthread_cancel(pthread_t);
 
+int pthread_getschedparam(pthread_t, int *__restrict, struct sched_param *__restrict);
+int pthread_setschedparam(pthread_t, int, const struct sched_param *);
+int pthread_setschedprio(pthread_t, int);
+
 int pthread_once(pthread_once_t *, void (*)(void));
 
 int pthread_mutex_init(pthread_mutex_t *__restrict, const pthread_mutexattr_t *__restrict);
@@ -100,6 +104,9 @@ int pthread_mutex_trylock(pthread_mutex_t *);
 int pthread_mutex_timedlock(pthread_mutex_t *__restrict, const struct timespec *__restrict);
 int pthread_mutex_destroy(pthread_mutex_t *);
 int pthread_mutex_consistent(pthread_mutex_t *);
+
+int pthread_mutex_getprioceiling(const pthread_mutex_t *__restrict, int *__restrict);
+int pthread_mutex_setprioceiling(pthread_mutex_t *__restrict, int, int *__restrict);
 
 int pthread_cond_init(pthread_cond_t *__restrict, const pthread_condattr_t *__restrict);
 int pthread_cond_destroy(pthread_cond_t *);
@@ -188,6 +195,8 @@ int pthread_atfork(void (*)(void), void (*)(void), void (*)(void));
 int pthread_getconcurrency(void);
 int pthread_setconcurrency(int);
 
+int pthread_getcpuclockid(pthread_t, clockid_t *);
+
 struct __ptcb {
 	void (*__f)(void *);
 	void *__x;
@@ -199,6 +208,10 @@ void _pthread_cleanup_pop(struct __ptcb *, int);
 
 #define pthread_cleanup_push(f, x) do { struct __ptcb __cb; _pthread_cleanup_push(&__cb, f, x);
 #define pthread_cleanup_pop(r) _pthread_cleanup_pop(&__cb, (r)); } while(0)
+
+#ifdef _GNU_SOURCE
+int pthread_getattr_np(pthread_t, pthread_attr_t *);
+#endif
 
 #ifdef __cplusplus
 }

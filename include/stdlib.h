@@ -7,12 +7,7 @@ extern "C" {
 
 #include <features.h>
 
-#undef NULL
-#ifdef __cplusplus
-#define NULL 0
-#else
-#define NULL ((void*)0)
-#endif
+#define NULL 0L
 
 #define __NEED_size_t
 #define __NEED_wchar_t
@@ -86,21 +81,21 @@ size_t wcstombs (char *__restrict, const wchar_t *__restrict, size_t);
  || defined(_XOPEN_SOURCE) || defined(_GNU_SOURCE) \
  || defined(_BSD_SOURCE)
 
-#ifndef WEXITSTATUS
+#define WNOHANG    1
+#define WUNTRACED  2
+
 #define WEXITSTATUS(s) (((s) & 0xff00) >> 8)
 #define WTERMSIG(s) ((s) & 0x7f)
 #define WSTOPSIG(s) WEXITSTATUS(s)
-#define WCOREDUMP(s) ((s) & 0x80)
 #define WIFEXITED(s) (!WTERMSIG(s))
 #define WIFSTOPPED(s) (((s) & 0xff) == 0x7f)
 #define WIFSIGNALED(s) (((signed char) (((s) & 0x7f) + 1) >> 1) > 0)
-#define WIFCONTINUED(s) ((s) == 0xffff)
-#endif
 
 int posix_memalign (void **, size_t, size_t);
 int setenv (const char *, const char *, int);
 int unsetenv (const char *);
 int mkstemp (char *);
+int mkostemp (char *, int);
 char *mkdtemp (char *);
 int getsubopt (char **, char *const *, char **);
 int rand_r (unsigned *);
@@ -140,8 +135,12 @@ void lcong48 (unsigned short [7]);
 #if defined(_GNU_SOURCE) || defined(_BSD_SOURCE)
 #include <alloca.h>
 char *mktemp (char *);
+int mkstemps (char *, int);
+int mkostemps (char *, int, int);
 void *valloc (size_t);
 void *memalign(size_t, size_t);
+#define WCOREDUMP(s) ((s) & 0x80)
+#define WIFCONTINUED(s) ((s) == 0xffff)
 #endif
 
 #ifdef _GNU_SOURCE
@@ -154,6 +153,11 @@ char *gcvt(double, int, char *);
 
 #if defined(_LARGEFILE64_SOURCE) || defined(_GNU_SOURCE)
 #define mkstemp64 mkstemp
+#define mkostemp64 mkostemp
+#if defined(_GNU_SOURCE) || defined(_BSD_SOURCE)
+#define mkstemps64 mkstemps
+#define mkostemps64 mkostemps
+#endif
 #endif
 
 #ifdef __cplusplus

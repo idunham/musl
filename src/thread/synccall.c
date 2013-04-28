@@ -1,5 +1,6 @@
 #include "pthread_impl.h"
 #include <semaphore.h>
+#include <string.h>
 
 static struct chain {
 	struct chain *next;
@@ -9,7 +10,6 @@ static struct chain {
 static void (*callback)(void *), *context;
 static int chainlen;
 static sem_t chainlock, chaindone;
-static pthread_rwlock_t lock = PTHREAD_RWLOCK_INITIALIZER;
 
 static void handler(int sig, siginfo_t *si, void *ctx)
 {
@@ -59,10 +59,10 @@ void __synccall(void (*func)(void *), void *ctx)
 		return;
 	}
 
-	pthread_rwlock_wrlock(&lock);
+	__inhibit_ptc();
 
 	__syscall(SYS_rt_sigprocmask, SIG_BLOCK, SIGALL_SET,
-		&oldmask, __SYSCALL_SSLEN);
+		&oldmask, _NSIG/8);
 
 	sem_init(&chaindone, 0, 0);
 	sem_init(&chainlock, 0, 1);
@@ -95,17 +95,7 @@ void __synccall(void (*func)(void *), void *ctx)
 	__libc_sigaction(SIGSYNCCALL, &sa, 0);
 
 	__syscall(SYS_rt_sigprocmask, SIG_SETMASK,
-		&oldmask, 0, __SYSCALL_SSLEN);
+		&oldmask, 0, _NSIG/8);
 
-	pthread_rwlock_unlock(&lock);
-}
-
-void __synccall_lock()
-{
-	pthread_rwlock_rdlock(&lock);
-}
-
-void __synccall_unlock()
-{
-	pthread_rwlock_unlock(&lock);
+	__release_ptc();
 }

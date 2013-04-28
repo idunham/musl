@@ -15,12 +15,7 @@ extern "C" {
 #define SEEK_CUR 1
 #define SEEK_END 2
 
-#undef NULL
-#ifdef __cplusplus
-#define NULL 0
-#else
-#define NULL ((void*)0)
-#endif
+#define NULL 0L
 
 #define __NEED_size_t
 #define __NEED_ssize_t
@@ -29,13 +24,16 @@ extern "C" {
 #define __NEED_off_t
 #define __NEED_pid_t
 #define __NEED_intptr_t
+#define __NEED_useconds_t
 
 #include <bits/alltypes.h>
 
 int pipe(int [2]);
+int pipe2(int [2], int);
 int close(int);
 int dup(int);
 int dup2(int, int);
+int dup3(int, int, int);
 off_t lseek(int, off_t, int);
 int fsync(int);
 int fdatasync(int);
@@ -147,7 +145,7 @@ void swab(const void *__restrict, void *__restrict, ssize_t);
 #endif
 
 #if defined(_GNU_SOURCE) || defined(_BSD_SOURCE) \
- || (defined(_XOPEN_SOURCE) && _XOPEN_SOURCE < 700)
+ || (defined(_XOPEN_SOURCE) && _XOPEN_SOURCE+0 < 700)
 int usleep(unsigned);
 unsigned ualarm(unsigned, unsigned);
 #endif
@@ -166,13 +164,14 @@ int getdtablesize(void);
 int sethostname(const char *, size_t);
 int getdomainname(char *, size_t);
 int setdomainname(const char *, size_t);
-int setgroups(size_t, const gid_t []);
+int setgroups(size_t, const gid_t *);
 char *getpass(const char *);
 int daemon(int, int);
 void setusershell(void);
 void endusershell(void);
 char *getusershell(void);
 int acct(const char *);
+long syscall(long, ...);
 #endif
 
 #ifdef _GNU_SOURCE
@@ -182,8 +181,7 @@ int setresgid(gid_t, gid_t, gid_t);
 int getresuid(uid_t *, uid_t *, uid_t *);
 int getresgid(gid_t *, gid_t *, gid_t *);
 char *get_current_dir_name(void);
-int pipe2(int [2], int);
-int dup3(int, int, int);
+void syncfs(int);
 #endif
 
 #if defined(_LARGEFILE64_SOURCE) || defined(_GNU_SOURCE)
@@ -210,6 +208,7 @@ int dup3(int, int, int);
 #define _POSIX_MEMLOCK          _POSIX_VERSION
 #define _POSIX_MEMLOCK_RANGE    _POSIX_VERSION
 #define _POSIX_MEMORY_PROTECTION _POSIX_VERSION
+#define _POSIX_FSYNC            _POSIX_VERSION
 #define _POSIX_NO_TRUNC         1
 #define _POSIX_RAW_SOCKETS      _POSIX_VERSION
 #define _POSIX_REALTIME_SIGNALS _POSIX_VERSION
@@ -221,6 +220,9 @@ int dup3(int, int, int);
 #define _POSIX_THREADS          _POSIX_VERSION
 #define _POSIX_THREAD_PROCESS_SHARED _POSIX_VERSION
 #define _POSIX_THREAD_SAFE_FUNCTIONS _POSIX_VERSION
+#define _POSIX_THREAD_ATTR_STACKADDR _POSIX_VERSION
+#define _POSIX_THREAD_ATTR_STACKSIZE _POSIX_VERSION
+#define _POSIX_THREAD_PRIORITY_SCHEDULING _POSIX_VERSION
 #define _POSIX_TIMERS           _POSIX_VERSION
 #define _POSIX_TIMEOUTS         _POSIX_VERSION
 #define _POSIX_MONOTONIC_CLOCK  _POSIX_VERSION

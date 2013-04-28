@@ -24,6 +24,9 @@
 #define __NEED_intptr_t
 #define __NEED_uintptr_t
 
+#define __NEED_intmax_t
+#define __NEED_uintmax_t
+
 #include <bits/alltypes.h>
 
 typedef int8_t  int_least8_t;
@@ -36,25 +39,22 @@ typedef uint16_t uint_least16_t;
 typedef uint32_t uint_least32_t;
 typedef uint64_t uint_least64_t;
 
-typedef long long          intmax_t;
-typedef unsigned long long uintmax_t;
-
 #if !defined __cplusplus || defined __STDC_LIMIT_MACROS
 
 #define INT8_MIN   (-1-0x7f)
 #define INT16_MIN  (-1-0x7fff)
 #define INT32_MIN  (-1-0x7fffffff)
-#define INT64_MIN  (-1-0x7fffffffffffffffLL)
+#define INT64_MIN  (-1-0x7fffffffffffffff)
 
 #define INT8_MAX   (0x7f)
 #define INT16_MAX  (0x7fff)
 #define INT32_MAX  (0x7fffffff)
-#define INT64_MAX  (0x7fffffffffffffffLL)
+#define INT64_MAX  (0x7fffffffffffffff)
 
 #define UINT8_MAX  (0xff)
 #define UINT16_MAX (0xffff)
 #define UINT32_MAX (0xffffffff)
-#define UINT64_MAX (0xffffffffffffffffULL)
+#define UINT64_MAX (0xffffffffffffffff)
 
 #define INT_LEAST8_MIN   INT8_MIN
 #define INT_LEAST16_MIN  INT16_MIN
@@ -78,7 +78,14 @@ typedef unsigned long long uintmax_t;
 #define WINT_MIN INT32_MIN
 #define WINT_MAX INT32_MAX
 
-#include <bits/wchar.h>
+#if L'\0'-1 > 0
+#define WCHAR_MAX (0xffffffffu+L'\0')
+#define WCHAR_MIN (0+L'\0')
+#else
+#define WCHAR_MAX (0x7fffffff+L'\0')
+#define WCHAR_MIN (-1-0x7fffffff+L'\0')
+#endif
+
 #include <bits/stdint.h>
 
 #endif
@@ -88,15 +95,22 @@ typedef unsigned long long uintmax_t;
 #define INT8_C(c)  c
 #define INT16_C(c) c
 #define INT32_C(c) c
-#define INT64_C(c) c ## LL
 
 #define UINT8_C(c)  c
 #define UINT16_C(c) c
 #define UINT32_C(c) c ## U
-#define UINT64_C(c) c ## ULL
 
+#if UINTPTR_MAX == UINT64_MAX
+#define INT64_C(c) c ## L
+#define UINT64_C(c) c ## UL
+#define INTMAX_C(c)  c ## L
+#define UINTMAX_C(c) c ## UL
+#else
+#define INT64_C(c) c ## LL
+#define UINT64_C(c) c ## ULL
 #define INTMAX_C(c)  c ## LL
 #define UINTMAX_C(c) c ## ULL
+#endif
 
 #endif
 

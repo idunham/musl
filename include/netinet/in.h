@@ -5,6 +5,8 @@
 extern "C" {
 #endif
 
+#include <features.h>
+
 #define __NEED_in_addr_t
 #define __NEED_in_port_t
 #define __NEED_sa_family_t
@@ -81,6 +83,7 @@ uint16_t ntohs(uint16_t);
 #define IPPROTO_UDP      17
 #define IPPROTO_IDP      22
 #define IPPROTO_TP       29
+#define IPPROTO_DCCP     33
 #define IPPROTO_IPV6     41
 #define IPPROTO_ROUTING  43
 #define IPPROTO_FRAGMENT 44
@@ -95,6 +98,8 @@ uint16_t ntohs(uint16_t);
 #define IPPROTO_ENCAP    98
 #define IPPROTO_PIM      103
 #define IPPROTO_COMP     108
+#define IPPROTO_SCTP     132
+#define IPPROTO_UDPLITE  136
 #define IPPROTO_RAW      255
 #define IPPROTO_MAX      256
 
@@ -200,6 +205,21 @@ uint16_t ntohs(uint16_t);
 #define IP_ADD_SOURCE_MEMBERSHIP  39
 #define IP_DROP_SOURCE_MEMBERSHIP 40
 #define IP_MSFILTER        41
+#define IP_MULTICAST_ALL   49
+#define IP_UNICAST_IF      50
+
+#ifdef _GNU_SOURCE
+#define MCAST_JOIN_GROUP   42
+#define MCAST_BLOCK_SOURCE 43
+#define MCAST_UNBLOCK_SOURCE      44
+#define MCAST_LEAVE_GROUP  45
+#define MCAST_JOIN_SOURCE_GROUP   46
+#define MCAST_LEAVE_SOURCE_GROUP  47
+#define MCAST_MSFILTER     48
+
+#define MCAST_EXCLUDE 0
+#define MCAST_INCLUDE 1
+#endif
 
 #define IP_RECVRETOPTS IP_RETOPTS
 

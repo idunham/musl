@@ -47,8 +47,10 @@ struct linger
 #define SOCK_DCCP      6
 #define SOCK_PACKET    10
 
+#ifndef SOCK_CLOEXEC
 #define SOCK_CLOEXEC   02000000
 #define SOCK_NONBLOCK  04000
+#endif
 
 #define PF_UNSPEC       0
 #define PF_LOCAL        1
@@ -74,10 +76,14 @@ struct linger
 #define PF_ASH          18
 #define PF_ECONET       19
 #define PF_ATMSVC       20
+#define PF_RDS          21
 #define PF_SNA          22
 #define PF_IRDA         23
 #define PF_PPPOX        24
 #define PF_WANPIPE      25
+#define PF_LLC          26
+#define PF_CAN          29
+#define PF_TIPC         30
 #define PF_BLUETOOTH    31
 #define PF_IUCV         32
 #define PF_RXRPC        33
@@ -86,7 +92,8 @@ struct linger
 #define PF_IEEE802154   36
 #define PF_CAIF         37
 #define PF_ALG          38
-#define PF_MAX          39
+#define PF_NFC          39
+#define PF_MAX          40
 
 #define AF_UNSPEC       PF_UNSPEC
 #define AF_LOCAL        PF_LOCAL
@@ -112,10 +119,14 @@ struct linger
 #define AF_ASH          PF_ASH
 #define AF_ECONET       PF_ECONET
 #define AF_ATMSVC       PF_ATMSVC
+#define AF_RDS          PF_RDS
 #define AF_SNA          PF_SNA
 #define AF_IRDA         PF_IRDA
 #define AF_PPPOX        PF_PPPOX
 #define AF_WANPIPE      PF_WANPIPE
+#define AF_LLC          PF_LLC
+#define AF_CAN          PF_CAN
+#define AF_TIPC         PF_TIPC
 #define AF_BLUETOOTH    PF_BLUETOOTH
 #define AF_IUCV         PF_IUCV
 #define AF_RXRPC        PF_RXRPC
@@ -124,8 +135,10 @@ struct linger
 #define AF_IEEE802154   PF_IEEE802154
 #define AF_CAIF         PF_CAIF
 #define AF_ALG          PF_ALG
+#define AF_NFC          PF_NFC
 #define AF_MAX          PF_MAX
 
+#ifndef SO_DEBUG
 #define SO_DEBUG        1
 #define SO_REUSEADDR    2
 #define SO_TYPE         3
@@ -147,6 +160,9 @@ struct linger
 #define SO_SNDLOWAT     19
 #define SO_RCVTIMEO     20
 #define SO_SNDTIMEO     21
+#define SO_SNDBUFFORCE  32
+#define SO_RCVBUFFORCE  33
+#endif
 
 #define SO_SECURITY_AUTHENTICATION              22
 #define SO_SECURITY_ENCRYPTION_TRANSPORT        23
@@ -156,14 +172,32 @@ struct linger
 
 #define SO_ATTACH_FILTER        26
 #define SO_DETACH_FILTER        27
+#define SO_GET_FILTER           SO_ATTACH_FILTER
 
 #define SO_PEERNAME             28
 #define SO_TIMESTAMP            29
 #define SCM_TIMESTAMP           SO_TIMESTAMP
 
 #define SO_ACCEPTCONN           30
+#define SO_PEERSEC              31
+#define SO_PASSSEC              34
+#define SO_TIMESTAMPNS          35
+#define SCM_TIMESTAMPNS         SO_TIMESTAMPNS
+#define SO_MARK                 36
+#define SO_TIMESTAMPING         37
+#define SCM_TIMESTAMPING        SO_TIMESTAMPING
+#define SO_PROTOCOL             38
+#define SO_DOMAIN               39
+#define SO_RXQ_OVFL             40
+#define SO_WIFI_STATUS          41
+#define SCM_WIFI_STATUS         SO_WIFI_STATUS
+#define SO_PEEK_OFF             42
+#define SO_NOFCS                43
+#define SO_LOCK_FILTER          44
 
+#ifndef SOL_SOCKET
 #define SOL_SOCKET      1
+#endif
 
 #define SOL_RAW         255
 #define SOL_DECNET      261
@@ -220,10 +254,8 @@ struct sockaddr
 struct sockaddr_storage
 {
 	sa_family_t ss_family;
-	union {
-		long long __align;
-		char __padding[126];
-	} __padding;
+	unsigned long __ss_align;
+	char __ss_padding[128-2*sizeof(unsigned long)];
 };
 
 int socket (int, int, int);
@@ -235,6 +267,7 @@ int bind (int, const struct sockaddr *, socklen_t);
 int connect (int, const struct sockaddr *, socklen_t);
 int listen (int, int);
 int accept (int, struct sockaddr *__restrict, socklen_t *__restrict);
+int accept4(int, struct sockaddr *__restrict, socklen_t *__restrict, int);
 
 int getsockname (int, struct sockaddr *__restrict, socklen_t *__restrict);
 int getpeername (int, struct sockaddr *__restrict, socklen_t *__restrict);
@@ -254,10 +287,6 @@ int sockatmark (int);
 #define SHUT_RD 0
 #define SHUT_WR 1
 #define SHUT_RDWR 2
-
-#ifdef _GNU_SOURCE
-int accept4(int, struct sockaddr *__restrict, socklen_t *__restrict, int);
-#endif
 
 #ifdef __cplusplus
 }

@@ -15,6 +15,15 @@
 #define MAP_FILE       0x00
 #define MAP_ANON       0x800
 #define MAP_ANONYMOUS  MAP_ANON
+#define MAP_NORESERVE  0x0400
+#define MAP_GROWSDOWN  0x1000
+#define MAP_DENYWRITE  0x2000
+#define MAP_EXECUTABLE 0x4000
+#define MAP_LOCKED     0x8000
+#define MAP_POPULATE   0x10000
+#define MAP_NONBLOCK   0x20000
+#define MAP_STACK      0x40000
+#define MAP_HUGETLB    0x80000
 
 #define POSIX_MADV_NORMAL       0
 #define POSIX_MADV_RANDOM       1
@@ -42,6 +51,8 @@
 #define MADV_UNMERGEABLE 13
 #define MADV_HUGEPAGE    14
 #define MADV_NOHUGEPAGE  15
+#define MADV_DONTDUMP    16
+#define MADV_DODUMP      17
 #define MADV_HWPOISON    100
 
 #define MREMAP_MAYMOVE  1

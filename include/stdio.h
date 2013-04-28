@@ -20,12 +20,7 @@ extern "C" {
 
 #include <bits/alltypes.h>
 
-#undef NULL
-#ifdef __cplusplus
-#define NULL 0
-#else
-#define NULL ((void*)0)
-#endif
+#define NULL 0L
 
 #undef EOF
 #define EOF (-1)
@@ -174,15 +169,12 @@ int ferror_unlocked(FILE *);
 int fileno_unlocked(FILE *);
 int getw(FILE *);
 int putw(int, FILE *);
-#endif
-
-#ifdef _BSD_SOURCE
 char *fgetln(FILE *, size_t *);
+int asprintf(char **, const char *, ...);
+int vasprintf(char **, const char *, va_list);
 #endif
 
 #ifdef _GNU_SOURCE
-int asprintf(char **, const char *, ...);
-int vasprintf(char **, const char *, va_list);
 char *fgets_unlocked(char *, int, FILE *);
 int fputs_unlocked(const char *, FILE *);
 #endif

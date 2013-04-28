@@ -136,7 +136,7 @@ static void sha512_init(struct sha512 *s)
 	s->h[7] = 0x5be0cd19137e2179ULL;
 }
 
-static void sha512_sum(struct sha512 *s, uint8_t md[20])
+static void sha512_sum(struct sha512 *s, uint8_t *md)
 {
 	int i;
 
@@ -174,7 +174,7 @@ static void sha512_update(struct sha512 *s, const void *m, unsigned long len)
 	memcpy(s->buf, p, len);
 }
 
-static unsigned char b64[] =
+static const unsigned char b64[] =
 "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
 static char *to64(char *s, unsigned int u, int n)
@@ -193,7 +193,7 @@ static char *to64(char *s, unsigned int u, int n)
 #define SALT_MAX 16
 #define ROUNDS_DEFAULT 5000
 #define ROUNDS_MIN 1000
-#define ROUNDS_MAX 20000
+#define ROUNDS_MAX 9999999
 
 /* hash n bytes of the repeated md message digest */
 static void hashmd(struct sha512 *s, unsigned int n, const void *md)

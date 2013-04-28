@@ -1,5 +1,8 @@
 #include <aio.h>
 #include <errno.h>
+#include <limits.h>
+#include <unistd.h>
+#include <string.h>
 #include "pthread_impl.h"
 
 struct lio_state {
@@ -64,7 +67,7 @@ static void *wait_thread(void *p)
 	return 0;
 }
 
-int lio_listio(int mode, struct aiocb *restrict const cbs[restrict], int cnt, struct sigevent *restrict sev)
+int lio_listio(int mode, struct aiocb *restrict const *restrict cbs, int cnt, struct sigevent *restrict sev)
 {
 	int i, ret;
 	struct lio_state *st=0;
@@ -106,7 +109,7 @@ int lio_listio(int mode, struct aiocb *restrict const cbs[restrict], int cnt, st
 	if (mode == LIO_WAIT) {
 		ret = lio_wait(st);
 		free(st);
-		return 0;
+		return ret;
 	}
 
 	if (st) {

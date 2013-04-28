@@ -76,8 +76,7 @@ int getaddrinfo(const char *restrict host, const char *restrict serv, const stru
 	if (serv) {
 		if (!*serv) return EAI_SERVICE;
 		port = strtoul(serv, &z, 10);
-		if (!*z && port > 65535) return EAI_SERVICE;
-		if (!port) {
+		if (*z) {
 			size_t servlen = strlen(serv);
 			char *end = line;
 
@@ -96,6 +95,7 @@ int getaddrinfo(const char *restrict host, const char *restrict serv, const stru
 			__fclose_ca(f);
 			if (feof(f)) return EAI_SERVICE;
 		}
+		if (port > 65535) return EAI_SERVICE;
 		port = htons(port);
 	}
 
@@ -219,7 +219,7 @@ int getaddrinfo(const char *restrict host, const char *restrict serv, const stru
 		while (j--) buf[i++].sa.sin.sin_family = AF_INET6;
 	}
 
-	if (__dns_get_rr((void *)&buf[cnt], 0, 256, 1, reply, RR_CNAME, 1) < 0)
+	if (__dns_get_rr((void *)&buf[cnt], 0, 256, 1, reply, RR_CNAME, 1) <= 0)
 		strcpy((void *)&buf[cnt], host);
 
 	for (i=0; i<cnt; i++) {

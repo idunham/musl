@@ -7,12 +7,7 @@ extern "C" {
 
 #include <features.h>
 
-#undef NULL
-#ifdef __cplusplus
-#define NULL 0
-#else
-#define NULL ((void*)0)
-#endif
+#define NULL 0L
 
 #define __NEED_size_t
 #if defined(_POSIX_SOURCE) || defined(_POSIX_C_SOURCE) \
@@ -79,7 +74,8 @@ size_t strxfrm_l (char *__restrict, const char *__restrict, size_t, locale_t);
 void *memccpy (void *__restrict, const void *__restrict, int, size_t);
 #endif
 
-#ifdef _BSD_SOURCE
+#if defined(_GNU_SOURCE) || defined(_BSD_SOURCE)
+char *strsep(char **, const char *);
 size_t strlcat (char *, const char *, size_t);
 size_t strlcpy (char *, const char *, size_t);
 #endif
@@ -91,7 +87,7 @@ int strcasecmp_l (const char *, const char *, locale_t);
 int strncasecmp_l (const char *, const char *, size_t, locale_t);
 char *strchrnul(const char *, int);
 char *strcasestr(const char *, const char *);
-char *strsep(char **, const char *);
+void *memmem(const void *, size_t, const void *, size_t);
 void *memrchr(const void *, int, size_t);
 void *mempcpy(void *, const void *, size_t);
 #ifndef __cplusplus

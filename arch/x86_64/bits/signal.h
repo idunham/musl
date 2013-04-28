@@ -1,17 +1,64 @@
 #if defined(_POSIX_SOURCE) || defined(_POSIX_C_SOURCE) \
  || defined(_XOPEN_SOURCE) || defined(_GNU_SOURCE) || defined(_BSD_SOURCE)
 
-struct __fpstate {
-	unsigned long __x[4];
-	unsigned char __y[384];
-	unsigned long __z[12];
-};
+#ifdef _GNU_SOURCE
+#define REG_R8          0
+#define REG_R9          1
+#define REG_R10         2
+#define REG_R11         3
+#define REG_R12         4
+#define REG_R13         5
+#define REG_R14         6
+#define REG_R15         7
+#define REG_RDI         8
+#define REG_RSI         9
+#define REG_RBP         10
+#define REG_RBX         11
+#define REG_RDX         12
+#define REG_RAX         13
+#define REG_RCX         14
+#define REG_RSP         15
+#define REG_RIP         16
+#define REG_EFL         17
+#define REG_CSGSFS      18
+#define REG_ERR         19
+#define REG_TRAPNO      20
+#define REG_OLDMASK     21
+#define REG_CR2         22
+#endif
 
-typedef struct {
-	unsigned long __gregs[23];
-	void *__fpregs;
+#if defined(_GNU_SOURCE) || defined(_BSD_SOURCE)
+typedef long long greg_t, gregset_t[23];
+typedef struct _fpstate {
+	unsigned short cwd, swd, ftw, fop;
+	unsigned long long rip, rdp;
+	unsigned mxcsr, mxcr_mask;
+	struct {
+		unsigned short significand[4], exponent, padding[3];
+	} _st[8];
+	struct {
+		unsigned element[4];
+	} _xmm[16];
+	unsigned padding[24];
+} *fpregset_t;
+struct sigcontext {
+	unsigned long r8, r9, r10, r11, r12, r13, r14, r15;
+	unsigned long rdi, rsi, rbp, rbx, rdx, rax, rcx, rsp, rip, eflags;
+	unsigned short cs, gs, fs, __pad0;
+	unsigned long err, trapno, oldmask, cr2;
+	struct _fpstate *fpstate;
 	unsigned long __reserved1[8];
+};
+typedef struct {
+	gregset_t gregs;
+	fpregset_t fpregs;
+	unsigned long long __reserved1[8];
 } mcontext_t;
+#else
+typedef struct {
+	unsigned long __space[32];
+} mcontext_t;
+#endif
 
 typedef struct __ucontext {
 	unsigned long uc_flags;
@@ -19,7 +66,7 @@ typedef struct __ucontext {
 	stack_t uc_stack;
 	mcontext_t uc_mcontext;
 	sigset_t uc_sigmask;
-	struct __fpstate __fpregs_mem;
+	unsigned long __fpregs_mem[64];
 } ucontext_t;
 
 #define SA_NOCLDSTOP  1
@@ -31,18 +78,6 @@ typedef struct __ucontext {
 #define SA_RESETHAND  0x80000000
 #define SA_RESTORER   0x04000000
 
-#if defined(_GNU_SOURCE) || defined(_BSD_SOURCE)
-struct sigcontext {
-	unsigned long r8, r9, r10, r11, r12, r13, r14, r15;
-	unsigned long rdi, rsi, rbp, rbx, rdx, rax, rcx, rsp, rip, eflags;
-	unsigned short cs, gs, fs, __pad0;
-	unsigned long err, trapno, oldmask, cr2;
-	struct __fpstate *fpstate;
-	unsigned long __reserved1[8];
-};
-#define NSIG      64
-#endif
-
 #endif
 
 #define SIGHUP    1
@@ -51,6 +86,7 @@ struct sigcontext {
 #define SIGILL    4
 #define SIGTRAP   5
 #define SIGABRT   6
+#define SIGIOT    SIGABRT
 #define SIGBUS    7
 #define SIGFPE    8
 #define SIGKILL   9
@@ -78,3 +114,6 @@ struct sigcontext {
 #define SIGPWR    30
 #define SIGSYS    31
 #define SIGUNUSED SIGSYS
+
+#define _NSIG 65
+

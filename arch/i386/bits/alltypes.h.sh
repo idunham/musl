@@ -34,8 +34,8 @@ TYPEDEF long wchar_t;
 #endif
 #endif
 TYPEDEF long wint_t;
-TYPEDEF long wctrans_t;
-TYPEDEF long wctype_t;
+TYPEDEF const int * wctrans_t;
+TYPEDEF unsigned long wctype_t;
 
 TYPEDEF signed char int8_t;
 TYPEDEF short       int16_t;
@@ -64,6 +64,9 @@ TYPEDEF uint64_t           uint_fast64_t;
 TYPEDEF long          intptr_t;
 TYPEDEF unsigned long uintptr_t;
 
+TYPEDEF long long          intmax_t;
+TYPEDEF unsigned long long uintmax_t;
+
 #if defined(__FLT_EVAL_METHOD__) && __FLT_EVAL_METHOD__ == 0
 TYPEDEF float float_t;
 TYPEDEF double double_t;
@@ -74,6 +77,7 @@ TYPEDEF long double double_t;
 
 TYPEDEF long time_t;
 TYPEDEF int suseconds_t;
+TYPEDEF unsigned useconds_t;
 STRUCT timeval { time_t tv_sec; int tv_usec; };
 STRUCT timespec { time_t tv_sec; long tv_nsec; };
 
