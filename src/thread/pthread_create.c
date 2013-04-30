@@ -12,7 +12,7 @@ weak_alias(dummy_0, __pthread_tsd_run_dtors);
 _Noreturn void pthread_exit(void *result)
 {
 	pthread_t self = pthread_self();
-	int n;
+	sigset_t set;
 
 	self->result = result;
 
@@ -30,17 +30,43 @@ _Noreturn void pthread_exit(void *result)
 	/* Mark this thread dead before decrementing count */
 	__lock(self->killlock);
 	self->dead = 1;
+
+	/* Block all signals before decrementing the live thread count.
+	 * This is important to ensure that dynamically allocated TLS
+	 * is not under-allocated/over-committed, and possibly for other
+	 * reasons as well. */
+	__block_all_sigs(&set);
+
+	/* Wait to unlock the kill lock, which governs functions like
+	 * pthread_kill which target a thread id, until signals have
+	 * been blocked. This precludes observation of the thread id
+	 * as a live thread (with application code running in it) after
+	 * the thread was reported dead by ESRCH being returned. */
 	__unlock(self->killlock);
 
-	do n = libc.threads_minus_1;
-	while (n && a_cas(&libc.threads_minus_1, n, n-1)!=n);
-	if (!n) exit(0);
+	/* It's impossible to determine whether this is "the last thread"
+	 * until performing the atomic decrement, since multiple threads
+	 * could exit at the same time. For the last thread, revert the
+	 * decrement and unblock signals to give the atexit handlers and
+	 * stdio cleanup code a consistent state. */
+	if (a_fetch_add(&libc.threads_minus_1, -1)==0) {
+		libc.threads_minus_1 = 0;
+		__restore_sigs(&set);
+		exit(0);
+	}
 
 	if (self->detached && self->map_base) {
-		if (self->detached == 2)
-			__syscall(SYS_set_tid_address, 0);
-		__syscall(SYS_rt_sigprocmask, SIG_BLOCK,
-			SIGALL_SET, 0, _NSIG/8);
+		/* Detached threads must avoid the kernel clear_child_tid
+		 * feature, since the virtual address will have been
+		 * unmapped and possibly already reused by a new mapping
+		 * at the time the kernel would perform the write. In
+		 * the case of threads that started out detached, the
+		 * initial clone flags are correct, but if the thread was
+		 * detached later (== 2), we need to clear it here. */
+		if (self->detached == 2) __syscall(SYS_set_tid_address, 0);
+
+		/* The following call unmaps the thread's stack mapping
+		 * and then exits without touching the stack. */
 		__unmapself(self->map_base, self->map_size);
 	}
 
@@ -68,8 +94,7 @@ static int start(void *p)
 			self->detached = 2;
 			pthread_exit(0);
 		}
-		__syscall(SYS_rt_sigprocmask, SIG_SETMASK,
-			self->sigmask, 0, _NSIG/8);
+		__restore_sigs(self->sigmask);
 	}
 	if (self->unblock_cancel)
 		__syscall(SYS_rt_sigprocmask, SIG_UNBLOCK,
@@ -176,8 +201,7 @@ int pthread_create(pthread_t *restrict res, const pthread_attr_t *restrict attrp
 	}
 	if (attr._a_sched) {
 		do_sched = new->startlock[0] = 1;
-		__syscall(SYS_rt_sigprocmask, SIG_BLOCK,
-			SIGALL_SET, self->sigmask, _NSIG/8);
+		__block_app_sigs(new->sigmask);
 	}
 	new->unblock_cancel = self->cancel;
 	new->canary = self->canary;
@@ -188,8 +212,7 @@ int pthread_create(pthread_t *restrict res, const pthread_attr_t *restrict attrp
 	__release_ptc();
 
 	if (do_sched) {
-		__syscall(SYS_rt_sigprocmask, SIG_SETMASK,
-			new->sigmask, 0, _NSIG/8);
+		__restore_sigs(new->sigmask);
 	}
 
 	if (ret < 0) {
