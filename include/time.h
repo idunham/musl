@@ -55,7 +55,7 @@ struct tm *localtime (const time_t *);
 char *asctime (const struct tm *);
 char *ctime (const time_t *);
 
-#define CLOCKS_PER_SEC 1000000UL
+#define CLOCKS_PER_SEC 1000000L
 
 
 #if defined(_POSIX_SOURCE) || defined(_POSIX_C_SOURCE) \
@@ -81,6 +81,12 @@ struct itimerspec
 #define CLOCK_MONOTONIC          1
 #define CLOCK_PROCESS_CPUTIME_ID 2
 #define CLOCK_THREAD_CPUTIME_ID  3
+#define CLOCK_MONOTONIC_RAW      4
+#define CLOCK_REALTIME_COURSE    5
+#define CLOCK_MONOTONIC_COURSE   6
+#define CLOCK_BOOTTIME           7
+#define CLOCK_REALTIME_ALARM     8
+#define CLOCK_BOOTTIME_ALARM     9
 
 #define TIMER_ABSTIME 1
 
