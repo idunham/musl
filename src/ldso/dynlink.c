@@ -692,6 +692,10 @@ static void do_init_fini(struct dso *p)
 		}
 		if (dyn[0] & (1<<DT_INIT))
 			((void (*)(void))(p->base + dyn[DT_INIT]))();
+		if (!need_locking && libc.threads_minus_1) {
+			need_locking = 1;
+			pthread_mutex_lock(&init_fini_lock);
+		}
 	}
 	if (need_locking) pthread_mutex_unlock(&init_fini_lock);
 }
@@ -1268,6 +1272,18 @@ int __dladdr (void *addr, Dl_info *info)
 	return 0;
 }
 #endif
+
+int __dlinfo(void *dso, int req, void *res)
+{
+	if (invalid_dso_handle(dso)) return -1;
+	if (req != RTLD_DI_LINKMAP) {
+		snprintf(errbuf, sizeof errbuf, "Unsupported request %d", req);
+		errflag = 1;
+		return -1;
+	}
+	*(struct link_map **)res = dso;
+	return 0;
+}
 
 char *dlerror()
 {
