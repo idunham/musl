@@ -49,7 +49,7 @@ TOOL_LIBS = lib/musl-gcc.specs
 ALL_LIBS = $(CRT_LIBS) $(STATIC_LIBS) $(SHARED_LIBS) $(EMPTY_LIBS) $(TOOL_LIBS)
 ALL_TOOLS = tools/musl-gcc
 
-LDSO_PATHNAME = $(syslibdir)/ld-musl-$(ARCH).so.1
+LDSO_PATHNAME = $(syslibdir)/ld-musl-$(ARCH)$(SUBARCH).so.1
 
 -include config.mak
 
@@ -73,12 +73,19 @@ include/bits:
 	@test "$(ARCH)" || { echo "Please set ARCH in config.mak before running make." ; exit 1 ; }
 	ln -sf ../arch/$(ARCH)/bits $@
 
-include/bits/alltypes.h.sh: include/bits
+include/bits/alltypes.h.in: include/bits
 
-include/bits/alltypes.h: include/bits/alltypes.h.sh
-	sh $< > $@
+include/bits/alltypes.h: include/bits/alltypes.h.in include/alltypes.h.in tools/mkalltypes.sed
+	sed -f tools/mkalltypes.sed include/bits/alltypes.h.in include/alltypes.h.in > $@
 
 src/ldso/dynlink.lo: arch/$(ARCH)/reloc.h
+
+crt/crt1.o crt/Scrt1.o: $(wildcard arch/$(ARCH)/crt_arch.h)
+
+crt/Scrt1.o: CFLAGS += -fPIC
+
+OPTIMIZE_SRCS = $(wildcard $(OPTIMIZE_GLOBS:%=src/%))
+$(OPTIMIZE_SRCS:%.c=%.o) $(OPTIMIZE_SRCS:%.c=%.lo): CFLAGS += -O3
 
 %.o: $(ARCH)/%.s
 	$(CC) $(CFLAGS_ALL_STATIC) -c -o $@ $<
