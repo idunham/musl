@@ -1,13 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <langinfo.h>
+#include <locale.h>
 #include <time.h>
 #include <limits.h>
-#include "__time.h"
+#include "libc.h"
 
 // FIXME: integer overflows
 
-const char *__langinfo(nl_item);
+const char *__nl_langinfo_l(nl_item, locale_t);
 
 static int is_leap(int y)
 {
@@ -43,7 +44,7 @@ static int week_num(const struct tm *tm)
 	return val;
 }
 
-size_t strftime(char *restrict s, size_t n, const char *restrict f, const struct tm *restrict tm)
+size_t __strftime_l(char *restrict s, size_t n, const char *restrict f, const struct tm *restrict tm, locale_t loc)
 {
 	nl_item item;
 	int val;
@@ -182,14 +183,11 @@ do_fmt:
 			fmt = "%04d";
 			goto number;
 		case 'z':
-			if (tm->tm_isdst < 0) continue;
-			val = -__timezone - (tm->tm_isdst ? __dst_offset : 0);
+			val = -tm->__tm_gmtoff;
 			l += snprintf(s+l, n-l, "%+.2d%.2d", val/3600, abs(val%3600)/60);
 			continue;
 		case 'Z':
-			if (tm->tm_isdst < 0 || !__tzname[0] || !__tzname[0][0])
-				continue;
-			l += snprintf(s+l, n-l, "%s", __tzname[!!tm->tm_isdst]);
+			l += snprintf(s+l, n-l, "%s", tm->__tm_zone);
 			continue;
 		default:
 			return 0;
@@ -202,14 +200,21 @@ number:
 		l += snprintf(s+l, n-l, fmt, val);
 		continue;
 nl_strcat:
-		l += snprintf(s+l, n-l, "%s", __langinfo(item));
+		l += snprintf(s+l, n-l, "%s", __nl_langinfo_l(item, loc));
 		continue;
 nl_strftime:
-		fmt = __langinfo(item);
+		fmt = __nl_langinfo_l(item, loc);
 recu_strftime:
-		l += strftime(s+l, n-l, fmt, tm);
+		l += __strftime_l(s+l, n-l, fmt, tm, loc);
 	}
 	if (l >= n) return 0;
 	s[l] = 0;
 	return l;
 }
+
+size_t strftime(char *restrict s, size_t n, const char *restrict f, const struct tm *restrict tm)
+{
+	return __strftime_l(s, n, f, tm, LC_GLOBAL_LOCALE);
+}
+
+weak_alias(__strftime_l, strftime_l);
