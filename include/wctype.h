@@ -8,7 +8,6 @@ extern "C" {
 #include <features.h>
 
 #define __NEED_wint_t
-#define __NEED_wctrans_t
 #define __NEED_wctype_t
 
 #if defined(_POSIX_SOURCE) || defined(_POSIX_C_SOURCE) \
@@ -18,8 +17,10 @@ extern "C" {
 
 #include <bits/alltypes.h>
 
+typedef const int * wctrans_t;
+
 #undef WEOF
-#define WEOF (-1)
+#define WEOF 0xffffffffU
 
 #undef iswdigit
 
