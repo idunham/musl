@@ -11,6 +11,7 @@
 #include <ctype.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <errno.h>
 #include "__dns.h"
 #include "stdio_impl.h"
 
@@ -35,9 +36,9 @@ int __dns_doqueries(unsigned char *dest, const char *name, int *rr, int rrcnt)
 		struct sockaddr_in sin;
 		struct sockaddr_in6 sin6;
 	} sa = {0}, ns[3] = {{0}};
-	socklen_t sl;
+	socklen_t sl = sizeof sa.sin;
 	int nns = 0;
-	int family = AF_UNSPEC;
+	int family = AF_INET;
 	unsigned char q[280] = "", *r = dest;
 	int ql;
 	int rlen;
@@ -75,10 +76,12 @@ int __dns_doqueries(unsigned char *dest, const char *name, int *rr, int rrcnt)
 		for (s=line+11; isspace(*s); s++);
 		for (z=s; *z && !isspace(*z); z++);
 		*z=0;
-		if (__ipparse(ns+nns, family, s) < 0) continue;
+		if (__ipparse(ns+nns, AF_UNSPEC, s) < 0) continue;
 		ns[nns].sin.sin_port = htons(53);
-		family = ns[nns++].sin.sin_family;
-		sl = family==AF_INET6 ? sizeof sa.sin6 : sizeof sa.sin;
+		if (ns[nns++].sin.sin_family == AF_INET6) {
+			family = AF_INET6;
+			sl = sizeof sa.sin6;
+		}
 	}
 	if (f) __fclose_ca(f);
 	if (!nns) {
@@ -92,6 +95,29 @@ int __dns_doqueries(unsigned char *dest, const char *name, int *rr, int rrcnt)
 	/* Get local address and open/bind a socket */
 	sa.sin.sin_family = family;
 	fd = socket(family, SOCK_DGRAM|SOCK_CLOEXEC|SOCK_NONBLOCK, 0);
+
+	/* Handle case where system lacks IPv6 support */
+	if (fd < 0 && errno == EAFNOSUPPORT) {
+		if (family != AF_INET6) return EAI_SYSTEM;
+		fd = socket(AF_INET, SOCK_DGRAM|SOCK_CLOEXEC|SOCK_NONBLOCK, 0);
+		family = AF_INET;
+	}
+	if (fd < 0) return EAI_SYSTEM;
+
+	/* Convert any IPv4 addresses in a mixed environment to v4-mapped */
+	if (family == AF_INET6) {
+		setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &(int){0}, sizeof 0);
+		for (i=0; i<nns; i++) {
+			if (ns[i].sin.sin_family != AF_INET) continue;
+			memcpy(ns[i].sin6.sin6_addr.s6_addr+12,
+				&ns[i].sin.sin_addr, 4);
+			memcpy(ns[i].sin6.sin6_addr.s6_addr,
+				"\0\0\0\0\0\0\0\0\0\0\xff\xff", 12);
+			ns[i].sin6.sin6_family = AF_INET6;
+			ns[i].sin6.sin6_flowinfo = 0;
+			ns[i].sin6.sin6_scope_id = 0;
+		}
+	}
 
 	pthread_cleanup_push(cleanup, (void *)(intptr_t)fd);
 	pthread_setcancelstate(cs, 0);
@@ -195,32 +221,7 @@ int __dns_query(unsigned char *r, const void *a, int family, int ptr)
 	return __dns_doqueries(r, a, rr, rrcnt);
 }
 
-
-#define BITOP(a,b,op) \
- ((a)[(size_t)(b)/(8*sizeof *(a))] op (size_t)1<<((size_t)(b)%(8*sizeof *(a))))
-
-static int decname(char *s, const unsigned char *b, const unsigned char *p)
-{
-	/* Remember jump destinations to detect loops and abort */
-	size_t seen[PACKET_MAX/8/sizeof(size_t)] = { 0 };
-	char *sz = s + HOST_NAME_MAX;
-	const unsigned char *pz = b+512;
-	for (;;) {
-		if (p>=pz) return -1;
-		else if (*p&0xc0) {
-			int j = (p[0]&1) | p[1];
-			if (BITOP(seen, j, &)) return -1;
-			BITOP(seen, j, |=);
-			p = b + j;
-		} else if (*p) {
-			if (p+*p+1>=pz || s+*p>=sz) return -1;
-			memcpy(s, p+1, *p);
-			s += *p+1;
-			p += *p+1;
-			s[-1] = *p ? '.' : 0;
-		} else return 0;
-	}
-}
+int __dn_expand(const unsigned char *, const unsigned char *, const unsigned char *, char *, int);
 
 int __dns_get_rr(void *dest, size_t stride, size_t maxlen, size_t limit, const unsigned char *r, int rr, int dec)
 {
@@ -249,7 +250,8 @@ int __dns_get_rr(void *dest, size_t stride, size_t maxlen, size_t limit, const u
 		len = p[8]*256 + p[9];
 		if (p+len > r+512) return -1;
 		if (p[1]==rr && len <= maxlen) {
-			if (dec && decname(tmp, r, p+10)<0) return -1;
+			if (dec && __dn_expand(r, r+512, p+10, tmp, sizeof tmp)<0)
+				return -1;
 			if (dest && limit) {
 				if (dec) strcpy(dest, tmp);
 				else memcpy(dest, p+10, len);

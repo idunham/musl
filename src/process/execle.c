@@ -14,10 +14,10 @@ int execle(const char *path, const char *argv0, ...)
 		char **envp;
 		va_start(ap, argv0);
 		argv[0] = (char *)argv0;
-		for (i=1; i<argc; i++)
+		for (i=1; i<=argc; i++)
 			argv[i] = va_arg(ap, char *);
-		argv[i] = NULL;
 		envp = va_arg(ap, char **);
+		va_end(ap);
 		return execve(path, argv, envp);
 	}
 }

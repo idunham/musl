@@ -1,11 +1,13 @@
 #include <stdlib.h>
-#include <stdio.h>
 #include <limits.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <unistd.h>
-#include "libc.h"
+#include <string.h>
+#include "syscall.h"
+
+void __procfdname(char *, unsigned);
 
 char *realpath(const char *restrict filename, char *restrict resolved)
 {
@@ -13,42 +15,31 @@ char *realpath(const char *restrict filename, char *restrict resolved)
 	ssize_t r;
 	struct stat st1, st2;
 	char buf[15+3*sizeof(int)];
-	int alloc = 0;
+	char tmp[PATH_MAX];
 
 	if (!filename) {
 		errno = EINVAL;
 		return 0;
 	}
 
-	fd = open(filename, O_RDONLY|O_NONBLOCK|O_CLOEXEC);
+	fd = syscall(SYS_open, filename, O_PATH|O_NONBLOCK|O_CLOEXEC|O_LARGEFILE);
 	if (fd < 0) return 0;
-	snprintf(buf, sizeof buf, "/proc/self/fd/%d", fd);
+	__procfdname(buf, fd);
 
-	if (!resolved) {
-		alloc = 1;
-		resolved = malloc(PATH_MAX);
-		if (!resolved) return 0;
-	}
-
-	r = readlink(buf, resolved, PATH_MAX-1);
+	r = readlink(buf, tmp, sizeof tmp - 1);
 	if (r < 0) goto err;
-	resolved[r] = 0;
+	tmp[r] = 0;
 
 	fstat(fd, &st1);
-	r = stat(resolved, &st2);
+	r = stat(tmp, &st2);
 	if (r<0 || st1.st_dev != st2.st_dev || st1.st_ino != st2.st_ino) {
 		if (!r) errno = ELOOP;
 		goto err;
 	}
 
-	close(fd);
-	return resolved;
+	__syscall(SYS_close, fd);
+	return resolved ? strcpy(resolved, tmp) : strdup(tmp);
 err:
-	if (alloc) free(resolved);
-	close(fd);
+	__syscall(SYS_close, fd);
 	return 0;
 }
-
-/* NOTE: __realpath_chk actually takes a third argument, which we ignore; it is
- * a matter of ABI whether this alias is therefore safe or not */
-weak_alias(realpath, __realpath_chk);

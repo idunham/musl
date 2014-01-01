@@ -958,3 +958,127 @@ minor conformance bugs fixed:
 arch-specific bugs fixed:
 - x86_64 sigsetjmp clobbered the signal mask rather than saving it
 - misaligned stack when calling ctors/dtors (crashing on x86_64)
+
+
+
+0.9.12 release notes
+
+new features:
+- zoneinfo time zone support
+- PIE support on all supported archs
+- named sub-archs for endian and float ABI variants
+- improved support for non-root installs of the dynamic linker
+- ability to selectively build only performance-critical modules with -O3
+- simple buffer overflow detection in free/realloc
+- inet_ntop now presents v4-mapped addresses in ::ffff:a.b.c.d form
+- ldd now reports libc and the dynamic linker in its output
+
+compatibility:
+- support for new init/fini array (needed for ctors/dtors on newer gcc)
+- C++ ABI fully matches glibc/LSB, at least on x86
+- many added ABI compatibility symbols for using glibc-linked libs
+- support for STB_GNU_UNIQUE symbol bindings (found in some C++ libs)
+- macros/types for new Linux kernel features in headers
+
+bugs fixed:
+- crashes in scanf on literal mismatches (regression from adding %m)
+- dl_iterate_phdr was passing invalid phdr pointers to its callback
+- getaddrinfo with null host and AF_UNSPEC was failing to report IPv6
+- integer overflows in date/time conversion code
+- misinterpretation of pre-1930s dates as post-2038 on 32-bit archs
+- make install failed to install bits headers if make was not run first
+- shm_open was wrongly cancellable
+- low- or no-impact heap corruption in memalign
+- explicitly running the dynamic linker on PIE programs did not work
+- missing macros and sysconf for some supported POSIX option groups
+- missing close-on-exec flags for several internal fd uses
+
+arch-specific bugs:
+- wrong SIG_ATOMIC_MIN/MAX macros on x86_64
+- erfcl was missing on archs where long double is same as double
+- broken dynamic-model TLS in static-linked arm/mips/powerpc programs
+
+
+
+0.9.13 release notes
+
+new features:
+- iconv support for EUC-KR and Big5 (including HKSCS) encodings
+- field widths (POSIX 2008 feature) in strftime
+- recursive rpath and $ORIGIN support in dynamic linker
+- cpu affinity interfaces
+- support for armhf (hardfloat) floating point environment (fenv)
+- support for SSE fenv on i386 (for apps using -mfpmath=sse -msse2)
+- strftime %s format (seconds since the epoch, future POSIX requirement)
+- configure script now saves its command line as a comment in config.mak
+- legacy functions valloc and euidaccess
+
+performance:
+- optimized asm memcpy for arm
+- optimized asm memset for i386 and x86_64
+- optimized C versions of memcpy and memset for all archs
+- eliminated major spurious syscalls from posix_spawn
+- some math asm for armhf (hardfloat)
+
+workarounds for:
+- qemu-user's rt_sigaction syscall does not allow old to alias new
+- qemu-user's madvise always succeeds (broke pthread_getattr_np)
+- passing PT_INTERP to dlopen attempted to double-load libc
+- gcc 4.8.x generating self-referential (infinite recursion) memcpy/memset
+- linux's lack of support for fchdir, fchmod, fchown, fstat on O_PATH fds
+
+bugs fixed:
+- failure to honor flags for fchmodat and faccessat (linux syscall api flaws)
+- SIGEV_THREAD timer id corruption and race condition issues
+- timer thread TLS incorrectly keeping values from previous expiry run
+- ecvt/fcvt decimal position off-by-one
+- in symbol-versioned libs, symbol resolved to oldest instead of newest
+- posix_spawn not correctly reporting errno from exec failure
+- "make install" was not atomic (overwrote files rather than replacing)
+- integer overflows in strftime
+- unset/empty TZ variable was mishandled
+- strftime could crash if the struct tm did not have valid tm_zone field
+- failure of fenv functions to handle invalid arguments (required by ISO C)
+- failure of some math functions (C and i386 asm) to raise underflow flag
+- broken dn_expand function (previously not used internally)
+- race conditions with signals during fork
+- incorrect access check in mktemp (obsolete function)
+- unnecessary arbitrary limits on size of program headers in dynamic loader
+- text formatting bugs in output of err.h functions
+
+arch-specific bugs:
+- fesetenv(FE_DFL_ENV) crashed on i386
+- breakage of arm crt code when libc is compiled as thumb
+- arm/armhf (hardfloat) misidentified by configure
+- ambiguity of wait (exit status) macros on mips with signal number 127
+- wrong value of _NSIG and SIGRTMAX on mips
+
+
+
+0.9.14 release notes
+
+bugs fixed:
+- failure to properly install dynamic linker with DESTDIR set (symlink wrong)
+- rare deadlock in libc-internal locking routines
+- dynamic linker used fallback paths wrongly on (possibly transient) errors
+- popen broken when stdin or stdout was already closed in parent
+- deadlock/memory-corruption in multithreaded set*id and setrlimit functions
+- realpath failed when file was not readable
+- readpath mistakenly had cancellation points in it
+- crashes in scanf with invalid %m conversion specifiers
+- misclassificiation of some invalid ld80 float representation in fpclassify
+- various overflow and underflow flag issues in math functions
+- domain handling errors for acoshf and acoshl
+- wrong values for some sysconf properties
+- lack of proper memory barriers on arm
+
+mips-specific bugs:
+- broken sysv ipc structures
+- multiple stack-related bugs in clone, leading to crashes in parent or child
+- overflow writing sigset_t in multithreaded set*id and setrlimit functions
+
+other improvements:
+- size and performance improvements to various math functions
+- wait.h as a compatibility alias for sys/wait.h
+- various header improvements
+- support for runtime-variable page size on archs that need it (mainly mips)

@@ -1,12 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <langinfo.h>
 #include <locale.h>
 #include <time.h>
 #include <limits.h>
 #include "libc.h"
-
-// FIXME: integer overflows
+#include "time_impl.h"
 
 const char *__nl_langinfo_l(nl_item, locale_t);
 
@@ -44,177 +44,225 @@ static int week_num(const struct tm *tm)
 	return val;
 }
 
-size_t __strftime_l(char *restrict s, size_t n, const char *restrict f, const struct tm *restrict tm, locale_t loc)
+const char *__tm_to_tzname(const struct tm *);
+size_t __strftime_l(char *restrict, size_t, const char *restrict, const struct tm *restrict, locale_t);
+
+const char *__strftime_fmt_1(char (*s)[100], size_t *l, int f, const struct tm *tm, locale_t loc)
 {
 	nl_item item;
-	int val;
+	long long val;
 	const char *fmt;
-	size_t l;
-	for (l=0; *f && l<n; f++) {
-		if (*f == '%') {
-do_fmt:
-		switch (*++f) {
-		case '%':
-			goto literal;
-		case 'E':
-		case 'O':
-			goto do_fmt;
-		case 'a':
-			item = ABDAY_1 + tm->tm_wday;
-			goto nl_strcat;
-		case 'A':
-			item = DAY_1 + tm->tm_wday;
-			goto nl_strcat;
-		case 'h':
-		case 'b':
-			item = ABMON_1 + tm->tm_mon;
-			goto nl_strcat;
-		case 'B':
-			item = MON_1 + tm->tm_mon;
-			goto nl_strcat;
-		case 'c':
-			item = D_T_FMT;
-			goto nl_strftime;
-		case 'C':
-			val = (1900+tm->tm_year) / 100;
-			fmt = "%02d";
-			goto number;
-		case 'd':
-			val = tm->tm_mday;
-			fmt = "%02d";
-			goto number;
-		case 'D':
-			fmt = "%m/%d/%y";
-			goto recu_strftime;
-		case 'e':
-			val = tm->tm_mday;
-			fmt = "%2d";
-			goto number;
-		case 'F':
-			fmt = "%Y-%m-%d";
-			goto recu_strftime;
-		case 'g':
-		case 'G':
-			fmt = "%04d";
-			val = tm->tm_year + 1900;
-			if (tm->tm_yday < 3 && week_num(tm) != 1) val--;
-			else if (tm->tm_yday > 360 && week_num(tm) == 1) val++;
-			if (*f=='g') {
-				fmt = "%02d";
-				val %= 100;
-			}
-			goto number;
-		case 'H':
-			val = tm->tm_hour;
-			fmt = "%02d";
-			goto number;
-		case 'I':
-			val = tm->tm_hour;
-			if (!val) val = 12;
-			else if (val > 12) val -= 12;
-			fmt = "%02d";
-			goto number;
-		case 'j':
-			val = tm->tm_yday+1;
-			fmt = "%03d";
-			goto number;
-		case 'm':
-			val = tm->tm_mon+1;
-			fmt = "%02d";
-			goto number;
-		case 'M':
-			val = tm->tm_min;
-			fmt = "%02d";
-			goto number;
-		case 'n':
-			s[l++] = '\n';
-			continue;
-		case 'p':
-			item = tm->tm_hour >= 12 ? PM_STR : AM_STR;
-			goto nl_strcat;
-		case 'r':
-			item = T_FMT_AMPM;
-			goto nl_strftime;
-		case 'R':
-			fmt = "%H:%M";
-			goto recu_strftime;
-		case 'S':
-			val = tm->tm_sec;
-			fmt = "%02d";
-			goto number;
-		case 't':
-			s[l++] = '\t';
-			continue;
-		case 'T':
-			fmt = "%H:%M:%S";
-			goto recu_strftime;
-		case 'u':
-			val = tm->tm_wday ? tm->tm_wday : 7;
-			fmt = "%d";
-			goto number;
-		case 'U':
-			val = (tm->tm_yday + 7 - tm->tm_wday) / 7;
-			fmt = "%02d";
-			goto number;
-		case 'W':
-			val = (tm->tm_yday + 7 - (tm->tm_wday+6)%7) / 7;
-			fmt = "%02d";
-			goto number;
-		case 'V':
-			val = week_num(tm);
-			fmt = "%02d";
-			goto number;
-		case 'w':
-			val = tm->tm_wday;
-			fmt = "%d";
-			goto number;
-		case 'x':
-			item = D_FMT;
-			goto nl_strftime;
-		case 'X':
-			item = T_FMT;
-			goto nl_strftime;
-		case 'y':
-			val = tm->tm_year % 100;
-			fmt = "%02d";
-			goto number;
-		case 'Y':
-			val = tm->tm_year + 1900;
-			fmt = "%04d";
-			goto number;
-		case 'z':
-			val = -tm->__tm_gmtoff;
-			l += snprintf(s+l, n-l, "%+.2d%.2d", val/3600, abs(val%3600)/60);
-			continue;
-		case 'Z':
-			l += snprintf(s+l, n-l, "%s", tm->__tm_zone);
-			continue;
-		default:
-			return 0;
+	int width = 2;
+
+	switch (f) {
+	case 'a':
+		item = ABDAY_1 + tm->tm_wday;
+		goto nl_strcat;
+	case 'A':
+		item = DAY_1 + tm->tm_wday;
+		goto nl_strcat;
+	case 'h':
+	case 'b':
+		item = ABMON_1 + tm->tm_mon;
+		goto nl_strcat;
+	case 'B':
+		item = MON_1 + tm->tm_mon;
+		goto nl_strcat;
+	case 'c':
+		item = D_T_FMT;
+		goto nl_strftime;
+	case 'C':
+		val = (1900LL+tm->tm_year) / 100;
+		goto number;
+	case 'd':
+		val = tm->tm_mday;
+		goto number;
+	case 'D':
+		fmt = "%m/%d/%y";
+		goto recu_strftime;
+	case 'e':
+		*l = snprintf(*s, sizeof *s, "%2d", tm->tm_mday);
+		return *s;
+	case 'F':
+		fmt = "%Y-%m-%d";
+		goto recu_strftime;
+	case 'g':
+	case 'G':
+		val = tm->tm_year + 1900LL;
+		if (tm->tm_yday < 3 && week_num(tm) != 1) val--;
+		else if (tm->tm_yday > 360 && week_num(tm) == 1) val++;
+		if (f=='g') val %= 100;
+		else width = 4;
+		goto number;
+	case 'H':
+		val = tm->tm_hour;
+		goto number;
+	case 'I':
+		val = tm->tm_hour;
+		if (!val) val = 12;
+		else if (val > 12) val -= 12;
+		goto number;
+	case 'j':
+		val = tm->tm_yday+1;
+		width = 3;
+		goto number;
+	case 'm':
+		val = tm->tm_mon+1;
+		goto number;
+	case 'M':
+		val = tm->tm_min;
+		goto number;
+	case 'n':
+		*l = 1;
+		return "\n";
+	case 'p':
+		item = tm->tm_hour >= 12 ? PM_STR : AM_STR;
+		goto nl_strcat;
+	case 'r':
+		item = T_FMT_AMPM;
+		goto nl_strftime;
+	case 'R':
+		fmt = "%H:%M";
+		goto recu_strftime;
+	case 's':
+		val = __tm_to_secs(tm) + tm->__tm_gmtoff;
+		goto number;
+	case 'S':
+		val = tm->tm_sec;
+		goto number;
+	case 't':
+		*l = 1;
+		return "\t";
+	case 'T':
+		fmt = "%H:%M:%S";
+		goto recu_strftime;
+	case 'u':
+		val = tm->tm_wday ? tm->tm_wday : 7;
+		width = 1;
+		goto number;
+	case 'U':
+		val = (tm->tm_yday + 7 - tm->tm_wday) / 7;
+		goto number;
+	case 'W':
+		val = (tm->tm_yday + 7 - (tm->tm_wday+6)%7) / 7;
+		goto number;
+	case 'V':
+		val = week_num(tm);
+		goto number;
+	case 'w':
+		val = tm->tm_wday;
+		width = 1;
+		goto number;
+	case 'x':
+		item = D_FMT;
+		goto nl_strftime;
+	case 'X':
+		item = T_FMT;
+		goto nl_strftime;
+	case 'y':
+		val = tm->tm_year % 100;
+		goto number;
+	case 'Y':
+		val = tm->tm_year + 1900;
+		if (val >= 10000) {
+			*l = snprintf(*s, sizeof *s, "+%lld", val);
+			return *s;
 		}
+		width = 4;
+		goto number;
+	case 'z':
+		if (tm->tm_isdst < 0) {
+			*l = 0;
+			return "";
 		}
-literal:
-		s[l++] = *f;
-		continue;
-number:
-		l += snprintf(s+l, n-l, fmt, val);
-		continue;
-nl_strcat:
-		l += snprintf(s+l, n-l, "%s", __nl_langinfo_l(item, loc));
-		continue;
-nl_strftime:
-		fmt = __nl_langinfo_l(item, loc);
-recu_strftime:
-		l += __strftime_l(s+l, n-l, fmt, tm, loc);
+		*l = snprintf(*s, sizeof *s, "%+.2d%.2d",
+			(-tm->__tm_gmtoff)/3600,
+			abs(tm->__tm_gmtoff%3600)/60);
+		return *s;
+	case 'Z':
+		if (tm->tm_isdst < 0) {
+			*l = 0;
+			return "";
+		}
+		fmt = __tm_to_tzname(tm);
+		goto string;
+	case '%':
+		*l = 1;
+		return "%";
+	default:
+		return 0;
 	}
-	if (l >= n) return 0;
-	s[l] = 0;
-	return l;
+number:
+	*l = snprintf(*s, sizeof *s, "%0*lld", width, val);
+	return *s;
+nl_strcat:
+	fmt = __nl_langinfo_l(item, loc);
+string:
+	*l = strlen(fmt);
+	return fmt;
+nl_strftime:
+	fmt = __nl_langinfo_l(item, loc);
+recu_strftime:
+	*l = __strftime_l(*s, sizeof *s, fmt, tm, loc);
+	if (!*l) return 0;
+	return *s;
+}
+
+size_t __strftime_l(char *restrict s, size_t n, const char *restrict f, const struct tm *restrict tm, locale_t loc)
+{
+	size_t l, k;
+	char buf[100];
+	char *p;
+	const char *t;
+	int plus;
+	unsigned long width;
+	for (l=0; l<n; f++) {
+		if (!*f) {
+			s[l] = 0;
+			return l;
+		}
+		if (*f != '%') {
+			s[l++] = *f;
+			continue;
+		}
+		f++;
+		if ((plus = (*f == '+'))) f++;
+		width = strtoul(f, &p, 10);
+		if (*p == 'C' || *p == 'F' || *p == 'G' || *p == 'Y') {
+			if (!width && p!=f) width = 1;
+		} else {
+			width = 0;
+		}
+		f = p;
+		if (*f == 'E' || *f == 'O') f++;
+		t = __strftime_fmt_1(&buf, &k, *f, tm, loc);
+		if (!t) break;
+		if (width) {
+			for (; *t=='+' || *t=='-' || (*t=='0'&&t[1]); t++, k--);
+			width--;
+			if (plus && tm->tm_year >= 10000-1900)
+				s[l++] = '+';
+			else if (tm->tm_year < -1900)
+				s[l++] = '-';
+			else
+				width++;
+			for (; width > k && l < n; width--)
+				s[l++] = '0';
+		}
+		if (k > n-l) k = n-l;
+		memcpy(s+l, t, k);
+		l += k;
+	}
+	if (n) {
+		if (l==n) l=n-1;
+		s[l] = 0;
+	}
+	return 0;
 }
 
 size_t strftime(char *restrict s, size_t n, const char *restrict f, const struct tm *restrict tm)
 {
-	return __strftime_l(s, n, f, tm, LC_GLOBAL_LOCALE);
+	return __strftime_l(s, n, f, tm, 0);
 }
 
 weak_alias(__strftime_l, strftime_l);

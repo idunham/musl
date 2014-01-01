@@ -2,7 +2,9 @@
 #include <limits.h>
 #include <errno.h>
 #include <sys/resource.h>
+#include <signal.h>
 #include "syscall.h"
+#include "libc.h"
 
 #define VER (-2)
 #define OFLOW (-3)
@@ -40,10 +42,10 @@ long sysconf(int name)
 		[_SC_AIO_PRIO_DELTA_MAX] = 0, /* ?? */
 		[_SC_DELAYTIMER_MAX] = _POSIX_DELAYTIMER_MAX,
 		[_SC_MQ_OPEN_MAX] = -1,
-		[_SC_MQ_PRIO_MAX] = MQ_PRIO_MAX,
+		[_SC_MQ_PRIO_MAX] = OFLOW,
 		[_SC_VERSION] = VER,
-		[_SC_PAGE_SIZE] = PAGE_SIZE,
-		[_SC_RTSIG_MAX] = 63, /* ?? */
+		[_SC_PAGE_SIZE] = OFLOW,
+		[_SC_RTSIG_MAX] = _NSIG - 1 - 31 - 3,
 		[_SC_SEM_NSEMS_MAX] = SEM_NSEMS_MAX,
 		[_SC_SEM_VALUE_MAX] = OFLOW,
 		[_SC_SIGQUEUE_MAX] = -1,
@@ -221,6 +223,9 @@ long sysconf(int name)
 	} else if (values[name] == OFLOW) {
 		if (name == _SC_ARG_MAX) return ARG_MAX;
 		if (name == _SC_SEM_VALUE_MAX) return SEM_VALUE_MAX;
+		if (name == _SC_MQ_PRIO_MAX) return MQ_PRIO_MAX;
+		/* name == _SC_PAGE_SIZE */
+		return PAGE_SIZE;
 	} else if (values[name] == CPUCNT) {
 		unsigned char set[128] = {1};
 		int i, cnt;

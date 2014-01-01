@@ -53,6 +53,11 @@ struct ipv6_mreq
 #define INADDR_NONE       ((in_addr_t) 0xffffffff)
 #define INADDR_LOOPBACK   ((in_addr_t) 0x7f000001)
 
+#define INADDR_UNSPEC_GROUP     ((in_addr_t) 0xe0000000)
+#define INADDR_ALLHOSTS_GROUP   ((in_addr_t) 0xe0000001)
+#define INADDR_ALLRTRS_GROUP    ((in_addr_t) 0xe0000002)
+#define INADDR_MAX_LOCAL_GROUP  ((in_addr_t) 0xe00000ff)
+
 #define IN6ADDR_ANY_INIT      { { { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 } } }
 #define IN6ADDR_LOOPBACK_INIT { { { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1 } } }
 
@@ -91,10 +96,12 @@ uint16_t ntohs(uint16_t);
 #define IPPROTO_NONE     59
 #define IPPROTO_DSTOPTS  60
 #define IPPROTO_MTP      92
+#define IPPROTO_BEETPH   94
 #define IPPROTO_ENCAP    98
 #define IPPROTO_PIM      103
 #define IPPROTO_COMP     108
 #define IPPROTO_SCTP     132
+#define IPPROTO_MH       135
 #define IPPROTO_UDPLITE  136
 #define IPPROTO_RAW      255
 #define IPPROTO_MAX      256
@@ -204,7 +211,7 @@ uint16_t ntohs(uint16_t);
 #define IP_MULTICAST_ALL   49
 #define IP_UNICAST_IF      50
 
-#ifdef _GNU_SOURCE
+#if defined(_GNU_SOURCE) || defined(_BSD_SOURCE)
 #define MCAST_JOIN_GROUP   42
 #define MCAST_BLOCK_SOURCE 43
 #define MCAST_UNBLOCK_SOURCE      44
@@ -248,6 +255,47 @@ struct ip_mreqn
 	struct in_addr imr_address;
 	int imr_ifindex;
 };
+
+struct ip_mreq_source {
+	struct in_addr imr_multiaddr;
+	struct in_addr imr_interface;
+	struct in_addr imr_sourceaddr;
+};
+
+struct ip_msfilter {
+	struct in_addr imsf_multiaddr;
+	struct in_addr imsf_interface;
+	uint32_t imsf_fmode;
+	uint32_t imsf_numsrc;
+	struct in_addr imsf_slist[1];
+};
+#define IP_MSFILTER_SIZE(numsrc) \
+	(sizeof(struct ip_msfilter) - sizeof(struct in_addr) \
+	+ (numsrc) * sizeof(struct in_addr))
+
+#if defined(_GNU_SOURCE) || defined(_BSD_SOURCE)
+struct group_req {
+	uint32_t gr_interface;
+	struct sockaddr_storage gr_group;
+};
+
+struct group_source_req {
+	uint32_t gsr_interface;
+	struct sockaddr_storage gsr_group;
+	struct sockaddr_storage gsr_source;
+};
+
+struct group_filter {
+	uint32_t gf_interface;
+	struct sockaddr_storage gf_group;
+	uint32_t gf_fmode;
+	uint32_t gf_numsrc;
+	struct sockaddr_storage gf_slist[1];
+};
+#define GROUP_FILTER_SIZE(numsrc) \
+	(sizeof(struct group_filter) - sizeof(struct sockaddr_storage) \
+	+ (numsrc) * sizeof(struct sockaddr_storage))
+#endif
 
 struct in_pktinfo
 {

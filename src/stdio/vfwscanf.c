@@ -6,9 +6,6 @@
 #include <wctype.h>
 #include <limits.h>
 #include <string.h>
-#include <errno.h>
-#include <math.h>
-#include <float.h>
 
 #include "stdio_impl.h"
 #include "shgetc.h"
@@ -143,6 +140,8 @@ int vfwscanf(FILE *restrict f, const wchar_t *restrict fmt, va_list ap)
 		}
 
 		if (*p=='m') {
+			wcs = 0;
+			s = 0;
 			alloc = !!dest;
 			p++;
 		} else {

@@ -8,7 +8,7 @@ long double scalbnl(long double x, int n)
 #elif (LDBL_MANT_DIG == 64 || LDBL_MANT_DIG == 113) && LDBL_MAX_EXP == 16384
 long double scalbnl(long double x, int n)
 {
-	union IEEEl2bits scale;
+	union ldshape u;
 
 	if (n > 16383) {
 		x *= 0x1p16383L;
@@ -17,7 +17,7 @@ long double scalbnl(long double x, int n)
 			x *= 0x1p16383L;
 			n -= 16383;
 			if (n > 16383)
-				return x * 0x1p16383L;
+				n = 16383;
 		}
 	} else if (n < -16382) {
 		x *= 0x1p-16382L;
@@ -26,11 +26,11 @@ long double scalbnl(long double x, int n)
 			x *= 0x1p-16382L;
 			n += 16382;
 			if (n < -16382)
-				return x * 0x1p-16382L;
+				n = -16382;
 		}
 	}
-	scale.e = 1.0;
-	scale.bits.exp = 0x3fff + n;
-	return x * scale.e;
+	u.f = 1.0;
+	u.i.se = 0x3fff + n;
+	return x * u.f;
 }
 #endif

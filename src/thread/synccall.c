@@ -1,6 +1,5 @@
 #include "pthread_impl.h"
 #include <semaphore.h>
-#include <string.h>
 
 static struct chain {
 	struct chain *next;
@@ -43,7 +42,7 @@ void __synccall(void (*func)(void *), void *ctx)
 	pthread_t self;
 	struct sigaction sa;
 	struct chain *next;
-	uint64_t oldmask;
+	sigset_t oldmask;
 
 	if (!libc.threads_minus_1) {
 		func(ctx);
@@ -52,12 +51,12 @@ void __synccall(void (*func)(void *), void *ctx)
 
 	__inhibit_ptc();
 
-	__syscall(SYS_rt_sigprocmask, SIG_BLOCK, SIGALL_SET,
-		&oldmask, _NSIG/8);
+	__block_all_sigs(&oldmask);
 
 	sem_init(&chaindone, 0, 0);
 	sem_init(&chainlock, 0, 1);
 	chainlen = 0;
+	head = 0;
 	callback = func;
 	context = ctx;
 
@@ -70,6 +69,10 @@ void __synccall(void (*func)(void *), void *ctx)
 	sigqueue(self->pid, SIGSYNCCALL, (union sigval){0});
 	while (sem_wait(&chaindone));
 
+	sa.sa_flags = 0;
+	sa.sa_handler = SIG_IGN;
+	__libc_sigaction(SIGSYNCCALL, &sa, 0);
+
 	for (cur=head; cur; cur=cur->next) {
 		sem_post(&cur->sem);
 		while (sem_wait(&cur->sem2));
@@ -81,12 +84,7 @@ void __synccall(void (*func)(void *), void *ctx)
 		sem_post(&cur->sem);
 	}
 
-	sa.sa_flags = 0;
-	sa.sa_handler = SIG_IGN;
-	__libc_sigaction(SIGSYNCCALL, &sa, 0);
-
-	__syscall(SYS_rt_sigprocmask, SIG_SETMASK,
-		&oldmask, 0, _NSIG/8);
+	__restore_sigs(&oldmask);
 
 	__release_ptc();
 }

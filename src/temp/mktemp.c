@@ -1,28 +1,32 @@
+#define _GNU_SOURCE
 #include <string.h>
-#include <fcntl.h>
-#include <unistd.h>
+#include <stdlib.h>
 #include <errno.h>
-#include "libc.h"
+#include <sys/stat.h>
 
 char *__randname(char *);
 
-char *__mktemp(char *template)
+char *mktemp(char *template)
 {
 	size_t l = strlen(template);
-	int retries = 10000;
+	int retries = 100;
+	struct stat st;
 
 	if (l < 6 || memcmp(template+l-6, "XXXXXX", 6)) {
 		errno = EINVAL;
 		*template = 0;
 		return template;
 	}
-	while (retries--) {
+
+	do {
 		__randname(template+l-6);
-		if (access(template, F_OK) < 0) return template;
-	}
+		if (stat(template, &st)) {
+			if (errno != ENOENT) *template = 0;
+			return template;
+		}
+	} while (--retries);
+
 	*template = 0;
 	errno = EEXIST;
 	return template;
 }
-
-weak_alias(__mktemp, mktemp);

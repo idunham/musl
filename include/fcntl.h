@@ -93,6 +93,9 @@ int posix_fallocate(int, off_t, off_t);
 #endif
 
 #if defined(_GNU_SOURCE) || defined(_BSD_SOURCE)
+#define AT_NO_AUTOMOUNT 0x800
+#define AT_EMPTY_PATH 0x1000
+
 #define FAPPEND O_APPEND
 #define FFSYNC O_FSYNC
 #define FASYNC O_ASYNC
@@ -154,6 +157,9 @@ ssize_t tee(int, int, size_t, unsigned);
 #endif
 
 #if defined(_LARGEFILE64_SOURCE) || defined(_GNU_SOURCE)
+#define F_GETLK64 F_GETLK
+#define F_SETLK64 F_SETLK
+#define F_SETLKW64 F_SETLKW
 #define open64 open
 #define openat64 openat
 #define creat64 creat

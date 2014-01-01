@@ -15,7 +15,11 @@ extern "C" {
 #define SEEK_CUR 1
 #define SEEK_END 2
 
+#ifdef __cplusplus
 #define NULL 0L
+#else
+#define NULL ((void*)0)
+#endif
 
 #define __NEED_size_t
 #define __NEED_ssize_t
@@ -30,6 +34,7 @@ extern "C" {
 
 int pipe(int [2]);
 int close(int);
+int posix_close(int, int);
 int dup(int);
 int dup2(int, int);
 off_t lseek(int, off_t, int);
@@ -182,6 +187,8 @@ char *get_current_dir_name(void);
 int pipe2(int [2], int);
 int dup3(int, int, int);
 void syncfs(int);
+int euidaccess(const char *, int);
+int eaccess(const char *, int);
 #endif
 
 #if defined(_LARGEFILE64_SOURCE) || defined(_GNU_SOURCE)
@@ -193,6 +200,8 @@ void syncfs(int);
 #define lockf64 lockf
 #define off64_t off_t
 #endif
+
+#define POSIX_CLOSE_RESTART     0
 
 #define _XOPEN_VERSION          700
 #define _XOPEN_UNIX             1

@@ -198,6 +198,13 @@ static char *fmt_u(uintmax_t x, char *s)
 	return s;
 }
 
+/* Do not override this check. The floating point printing code below
+ * depends on the float.h constants being right. If they are wrong, it
+ * may overflow the stack. */
+#if LDBL_MANT_DIG == 53
+typedef char compiler_defines_long_double_incorrectly[9-(int)sizeof(long double)];
+#endif
+
 static int fmt_fp(FILE *f, long double y, int w, int p, int fl, int t)
 {
 	uint32_t big[(LDBL_MAX_EXP+LDBL_MANT_DIG)/9+1];
@@ -523,7 +530,6 @@ static int printf_core(FILE *f, const char *fmt, va_list *ap, union arg *nl_arg,
 		/* Check validity of argument type (nl/normal) */
 		if (st==NOARG) {
 			if (argpos>=0) return -1;
-			else if (!f) continue;
 		} else {
 			if (argpos>=0) nl_type[argpos]=st, arg=nl_arg[argpos];
 			else if (f) pop_arg(&arg, st, ap);
@@ -653,8 +659,12 @@ int vfprintf(FILE *restrict f, const char *restrict fmt, va_list ap)
 	unsigned char internal_buf[80], *saved_buf = 0;
 	int ret;
 
+	/* the copy allows passing va_list* even if va_list is an array */
 	va_copy(ap2, ap);
-	if (printf_core(0, fmt, &ap2, nl_arg, nl_type) < 0) return -1;
+	if (printf_core(0, fmt, &ap2, nl_arg, nl_type) < 0) {
+		va_end(ap2);
+		return -1;
+	}
 
 	FLOCK(f);
 	if (!f->buf_size) {

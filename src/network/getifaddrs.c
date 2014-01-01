@@ -11,6 +11,7 @@
 #include <arpa/inet.h> /* inet_pton */
 #include <unistd.h>
 #include <sys/ioctl.h>
+#include <sys/socket.h>
 
 typedef union {
 	struct sockaddr_in6 v6;
@@ -66,7 +67,7 @@ static void ipv6netmask(unsigned prefix_length, struct sockaddr_in6 *sa)
 
 static void dealwithipv6(stor **list, stor** head)
 {
-	FILE* f = fopen("/proc/net/if_inet6", "r");
+	FILE* f = fopen("/proc/net/if_inet6", "rbe");
 	/* 00000000000000000000000000000001 01 80 10 80 lo
 	   A                                B  C  D  E  F
 	   all numbers in hex

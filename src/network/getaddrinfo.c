@@ -31,9 +31,6 @@ static int have_af(int family)
 }
 #endif
 
-#include <stdlib.h>
-#include <netdb.h>
-
 union sa {
 	struct sockaddr_in sin;
 	struct sockaddr_in6 sin6;
@@ -64,6 +61,9 @@ int getaddrinfo(const char *restrict host, const char *restrict serv, const stru
 	char *z;
 	int result;
 	int cnt;
+
+	if (family != AF_INET && family != AF_INET6 && family != AF_UNSPEC)
+		return EAI_FAMILY;
 
 	if (host && strlen(host)>255) return EAI_NONAME;
 	if (serv && strlen(serv)>32) return EAI_SERVICE;
